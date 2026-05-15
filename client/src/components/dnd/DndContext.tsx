@@ -42,35 +42,20 @@ export function DndProvider({ children }: DndProviderProps) {
     }
   }, []);
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      setActiveData(null);
-
-      if (!over) return;
-
-      const dragData = active.data.current as DragData | undefined;
-      if (!dragData) return;
-
-      if (dragData.type === "pod") {
-        handlePodDrop(dragData, over.id as string);
-      } else if (dragData.type === "cluster") {
-        handleClusterReorder(active.id as string, over.id as string);
-      }
-    },
-    [clusters],
-  );
-
   const handlePodDrop = useCallback(
     (podData: PodDragData, overId: string) => {
       // overId format: "cluster-drop-{clusterId}" or "cluster-drop-unclustered"
-      if (!overId.startsWith("cluster-drop-")) return;
+      if (!overId.startsWith("cluster-drop-")) {
+        return;
+      }
 
       const targetClusterId = overId.replace("cluster-drop-", "");
       const resolvedTargetId = targetClusterId === "unclustered" ? null : targetClusterId;
 
       // Skip if dropping on same cluster
-      if (resolvedTargetId === podData.sourceClusterId) return;
+      if (resolvedTargetId === podData.sourceClusterId) {
+        return;
+      }
 
       // The pod's leadSessionId is the sessionId for assignment
       assignSession(podData.podId, resolvedTargetId);
@@ -81,23 +66,52 @@ export function DndProvider({ children }: DndProviderProps) {
   const handleClusterReorder = useCallback(
     (activeId: string, overId: string) => {
       // Both IDs are "cluster-sort-{clusterId}"
-      if (!activeId.startsWith("cluster-sort-") || !overId.startsWith("cluster-sort-")) return;
+      if (!activeId.startsWith("cluster-sort-") || !overId.startsWith("cluster-sort-")) {
+        return;
+      }
 
       const activeClusterId = activeId.replace("cluster-sort-", "");
       const overClusterId = overId.replace("cluster-sort-", "");
 
-      if (activeClusterId === overClusterId) return;
+      if (activeClusterId === overClusterId) {
+        return;
+      }
 
       const currentIds = clusters.map((cluster) => cluster.id);
       const oldIndex = currentIds.indexOf(activeClusterId);
       const newIndex = currentIds.indexOf(overClusterId);
 
-      if (oldIndex === -1 || newIndex === -1) return;
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
 
       const newOrder = arrayMove(currentIds, oldIndex, newIndex);
       reorder(newOrder);
     },
     [clusters, reorder],
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveData(null);
+
+      if (!over) {
+        return;
+      }
+
+      const dragData = active.data.current as DragData | undefined;
+      if (!dragData) {
+        return;
+      }
+
+      if (dragData.type === "pod") {
+        handlePodDrop(dragData, over.id as string);
+      } else if (dragData.type === "cluster") {
+        handleClusterReorder(active.id as string, over.id as string);
+      }
+    },
+    [handlePodDrop, handleClusterReorder],
   );
 
   const activePod = activeData?.type === "pod"
