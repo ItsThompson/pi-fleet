@@ -8,7 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit -p tsconfig.build.json && tsdown",
     "start": "node dist/index.mjs",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@pi-fleet/shared": "*",

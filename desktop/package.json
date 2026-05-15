@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && tsdown",
     "start": "electron dist/main.cjs",
     "dev": "tsdown && electron dist/main.cjs",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "dist": "tsdown && npx electron-builder --mac"
   },
   "build": {

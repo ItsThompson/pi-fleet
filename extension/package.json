@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit && tsdown",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@pi-fleet/shared": "*"
