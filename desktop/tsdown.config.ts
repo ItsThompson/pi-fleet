@@ -12,4 +12,14 @@ export default defineConfig([
       neverBundle: ["electron"],
     },
   },
+  {
+    entry: ["src/preload.ts"],
+    format: "cjs",
+    platform: "node",
+    target: "es2022",
+    sourcemap: true,
+    deps: {
+      neverBundle: ["electron"],
+    },
+  },
 ]);
