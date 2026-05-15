@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
 import { ClusterSection } from "@/components/clusters/ClusterSection";
 import { ClusterForm } from "@/components/clusters/ClusterForm";
+import { DndProvider, DroppableCluster, SortableCluster } from "@/components/dnd";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -26,7 +28,6 @@ export function Sidebar() {
   }
 
   const unclusteredPods = getPodsForIds(unclustered.podIds);
-  // Also include pods not in any cluster's podIds list (fallback)
   const assignedPodIds = new Set([
     ...clusters.flatMap((cluster) => cluster.podIds),
     ...unclustered.podIds,
@@ -36,45 +37,66 @@ export function Sidebar() {
   );
   const allUnclusteredPods = [...unclusteredPods, ...orphanPods];
 
-  return (
-    <aside className="w-56 border-r flex flex-col shrink-0">
-      <div className="px-3 py-2 border-b flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Clusters
-        </span>
-        <Button
-          variant="ghost"
-          size="xs"
-          onClick={() => setShowCreateForm(true)}
-          title="Create cluster"
-        >
-          <Plus className="h-3 w-3" />
-        </Button>
-      </div>
-      <ScrollArea className="flex-1 py-1">
-        {clusters.map((cluster) => {
-          const clusterPods = getPodsForIds(cluster.podIds);
-          return (
-            <ClusterSection
-              key={cluster.id}
-              name={cluster.name}
-              clusterId={cluster.id}
-              pods={clusterPods}
-              attentionCount={computeAttentionCount(clusterPods)}
-            />
-          );
-        })}
-        <ClusterSection
-          name="Unclustered"
-          clusterId={null}
-          pods={allUnclusteredPods}
-          attentionCount={computeAttentionCount(allUnclusteredPods)}
-        />
-      </ScrollArea>
+  const sortableClusterIds = clusters.map(
+    (cluster) => `cluster-sort-${cluster.id}`,
+  );
 
-      {showCreateForm && (
-        <ClusterForm onClose={() => setShowCreateForm(false)} />
-      )}
-    </aside>
+  return (
+    <DndProvider>
+      <aside className="w-56 border-r flex flex-col shrink-0">
+        <div className="px-3 py-2 border-b flex items-center justify-between">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Clusters
+          </span>
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={() => setShowCreateForm(true)}
+            title="Create cluster"
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+        <ScrollArea className="flex-1 py-1">
+          <SortableContext
+            items={sortableClusterIds}
+            strategy={verticalListSortingStrategy}
+          >
+            {clusters.map((cluster) => {
+              const clusterPods = getPodsForIds(cluster.podIds);
+              return (
+                <SortableCluster
+                  key={cluster.id}
+                  clusterId={cluster.id}
+                  name={cluster.name}
+                >
+                  <DroppableCluster clusterId={cluster.id}>
+                    <ClusterSection
+                      name={cluster.name}
+                      clusterId={cluster.id}
+                      pods={clusterPods}
+                      attentionCount={computeAttentionCount(clusterPods)}
+                    />
+                  </DroppableCluster>
+                </SortableCluster>
+              );
+            })}
+          </SortableContext>
+
+          <DroppableCluster clusterId={null}>
+            <ClusterSection
+              name="Unclustered"
+              clusterId={null}
+              pods={allUnclusteredPods}
+              attentionCount={computeAttentionCount(allUnclusteredPods)}
+            />
+          </DroppableCluster>
+        </ScrollArea>
+
+        {showCreateForm && (
+          <ClusterForm onClose={() => setShowCreateForm(false)} />
+        )}
+      </aside>
+    </DndProvider>
   );
 }

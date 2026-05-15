@@ -2,6 +2,7 @@ import type { Pod } from "@pi-fleet/shared";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { PodRow } from "@/components/pods/PodRow";
+import { DraggablePod } from "@/components/dnd";
 import { useNavigationStore } from "@/stores/navigation-store";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,7 +49,14 @@ export function ClusterSection({ name, clusterId, pods, attentionCount }: Cluste
       </div>
       <CollapsibleContent className="pl-4 mt-0.5">
         {pods.map((pod) => (
-          <PodRow key={pod.leadSessionId} pod={pod} />
+          <DraggablePod
+            key={pod.leadSessionId}
+            podId={pod.leadSessionId}
+            displayName={pod.displayName}
+            sourceClusterId={clusterId}
+          >
+            <PodRow pod={pod} />
+          </DraggablePod>
         ))}
         {pods.length === 0 && (
           <p className="text-xs text-muted-foreground px-3 py-1">No pods</p>
