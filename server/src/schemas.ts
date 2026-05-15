@@ -39,5 +39,16 @@ export const heartbeatBodySchema = z.object({
   lastToolName: z.string().optional(),
 });
 
+export const openTerminalBodySchema = z.object({
+  sessionId: z.string().min(1),
+});
+
+export const ownershipBodySchema = z.object({
+  parentSessionId: z.string().min(1),
+  subagentIds: z.array(z.string().min(1)),
+});
+
 export type RegisterBodyParsed = z.infer<typeof registerBodySchema>;
 export type HeartbeatBodyParsed = z.infer<typeof heartbeatBodySchema>;
+export type OwnershipBodyParsed = z.infer<typeof ownershipBodySchema>;
+export type OpenTerminalBodyParsed = z.infer<typeof openTerminalBodySchema>;

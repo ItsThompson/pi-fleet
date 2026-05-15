@@ -2,10 +2,13 @@ import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { SERVER_PORT } from "@pi-fleet/shared";
 import { SessionRegistry } from "./session-registry.js";
+import { PodRegistry } from "./pod-registry.js";
 import { EventBus } from "./event-bus.js";
 import { registerSessionRoutes } from "./routes/sessions.js";
+import { registerPodRoutes } from "./routes/pods.js";
 import { registerEventsRoute } from "./routes/events.js";
 import { registerHealthRoute } from "./routes/health.js";
+import { registerOpenTerminalRoute } from "./routes/open-terminal.js";
 import { log } from "./utils/logger.js";
 
 export interface ServerDeps {
@@ -15,6 +18,8 @@ export interface ServerDeps {
   host?: string;
   /** Inject a custom SessionRegistry (for testing) */
   registry?: SessionRegistry;
+  /** Inject a custom PodRegistry (for testing) */
+  podRegistry?: PodRegistry;
   /** Inject a custom EventBus (for testing) */
   eventBus?: EventBus;
 }
@@ -22,6 +27,7 @@ export interface ServerDeps {
 export interface PiFleetServer {
   app: FastifyInstance;
   registry: SessionRegistry;
+  podRegistry: PodRegistry;
   eventBus: EventBus;
   start: () => Promise<void>;
   stop: () => Promise<void>;
@@ -35,6 +41,8 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
   const port = deps.port ?? SERVER_PORT;
   const host = deps.host ?? "127.0.0.1";
   const registry = deps.registry ?? new SessionRegistry();
+  const podRegistry =
+    deps.podRegistry ?? new PodRegistry({ sessionRegistry: registry });
   const eventBus = deps.eventBus ?? new EventBus();
   const startTime = Date.now();
 
@@ -42,14 +50,18 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
 
   // Register routes
   registerSessionRoutes(app, registry);
+  registerPodRoutes(app, podRegistry);
   registerEventsRoute(app, eventBus);
-  registerHealthRoute(app, registry, startTime);
+  registerHealthRoute(app, registry, podRegistry, startTime);
+  registerOpenTerminalRoute(app, registry);
 
   // Single event bridge: registry changes → EventBus broadcasts
   registry.onEvent((event) => {
     switch (event.type) {
       case "session:added":
         eventBus.broadcast({ type: "session:added", data: event.session });
+        // Re-evaluate pod membership for newly registered sessions
+        podRegistry.handleSessionRegistered(event.session.sessionId);
         break;
       case "session:updated":
         eventBus.broadcast({ type: "session:updated", data: event.session });
@@ -59,10 +71,30 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
           type: "session:removed",
           data: { sessionId: event.sessionId },
         });
+        // Handle pod membership changes on session removal
+        podRegistry.handleSessionRemoved(event.sessionId);
         log({
           timestamp: new Date().toISOString(),
           event: "session_reaped",
           sessionId: event.sessionId,
+        });
+        break;
+    }
+  });
+
+  // Pod event bridge: pod changes → EventBus broadcasts
+  podRegistry.onEvent((event) => {
+    switch (event.type) {
+      case "pod:formed":
+        eventBus.broadcast({ type: "pod:formed", data: event.pod });
+        break;
+      case "pod:updated":
+        eventBus.broadcast({ type: "pod:updated", data: event.pod });
+        break;
+      case "pod:dissolved":
+        eventBus.broadcast({
+          type: "pod:dissolved",
+          data: { leadSessionId: event.leadSessionId },
         });
         break;
     }
@@ -103,5 +135,5 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
     });
   }
 
-  return { app, registry, eventBus, start, stop };
+  return { app, registry, podRegistry, eventBus, start, stop };
 }
