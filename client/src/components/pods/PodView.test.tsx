@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PodView } from "./PodView";
 import { useSessionStore } from "@/stores/session-store";
+import { useFilterStore } from "@/stores/filter-store";
 import type { Pod, RegisteredSession } from "@pi-fleet/shared";
 
 function buildSession(overrides?: Partial<RegisteredSession>): RegisteredSession {
@@ -25,6 +26,7 @@ function buildSession(overrides?: Partial<RegisteredSession>): RegisteredSession
 describe("PodView - state grouping", () => {
   beforeEach(() => {
     useSessionStore.setState({ sessions: new Map(), activityChangedAt: new Map() });
+    useFilterStore.setState({ activeFilters: new Set() });
   });
 
   it("groups sessions into Needs Attention and Working sections", () => {
@@ -94,7 +96,7 @@ describe("PodView - state grouping", () => {
 
     render(<PodView pod={pod} />);
 
-    expect(screen.queryByText(/Needs Attention/)).not.toBeInTheDocument();
-    expect(screen.getByText("Working (1)")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Needs Attention/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Working (1)" })).toBeInTheDocument();
   });
 });

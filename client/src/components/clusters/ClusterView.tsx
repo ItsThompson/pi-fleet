@@ -1,8 +1,11 @@
 import { useState } from "react";
-import type { ActivityStatus } from "@pi-fleet/shared";
+import type { ActivityStatus, RegisteredSession } from "@pi-fleet/shared";
 import { usePodStore } from "@/stores/pod-store";
+import { useSessionStore } from "@/stores/session-store";
 import { useClusterStore } from "@/stores/cluster-store";
+import { useFilterStore } from "@/stores/filter-store";
 import { PodCard } from "@/components/pods/PodCard";
+import { FilterBadges } from "@/components/attention/FilterBadges";
 import { ClusterHeader } from "@/components/clusters/ClusterHeader";
 import { ClusterForm } from "@/components/clusters/ClusterForm";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,10 +20,13 @@ function needsAttention(state: ActivityStatus): boolean {
 
 export function ClusterView({ clusterId }: ClusterViewProps) {
   const pods = usePodStore((state) => state.pods);
+  const sessions = useSessionStore((state) => state.sessions);
   const cluster = useClusterStore((state) =>
     state.clusters.find((c) => c.id === clusterId),
   );
   const deleteCluster = useClusterStore((state) => state.deleteCluster);
+  const podPassesFilter = useFilterStore((state) => state.podPassesFilter);
+  const activeFilters = useFilterStore((state) => state.activeFilters);
   const [showEditForm, setShowEditForm] = useState(false);
 
   if (!cluster) {
@@ -36,8 +42,22 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
     podIdSet.has(pod.leadSessionId),
   );
 
-  const attentionPods = clusterPods.filter((pod) => needsAttention(pod.state));
-  const workingPods = clusterPods.filter((pod) => !needsAttention(pod.state));
+  // Compute all sessions in this cluster's pods for filter badge counts
+  const viewSessions = clusterPods.reduce<RegisteredSession[]>((acc, pod) => {
+    pod.memberSessionIds.forEach((id) => {
+      const session = sessions.get(id);
+      if (session) acc.push(session);
+    });
+    return acc;
+  }, []);
+
+  // Apply filters
+  const filteredPods = activeFilters.size > 0
+    ? clusterPods.filter((pod) => podPassesFilter(pod, sessions))
+    : clusterPods;
+
+  const attentionPods = filteredPods.filter((pod) => needsAttention(pod.state));
+  const workingPods = filteredPods.filter((pod) => !needsAttention(pod.state));
 
   // Count manual assignments (approximate from pod count vs directory matches)
   const manualCount = 0; // This would require server-side info; kept for display
@@ -58,6 +78,10 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
         onEdit={() => setShowEditForm(true)}
         onDelete={handleDelete}
       />
+
+      <div className="mb-4">
+        <FilterBadges sessions={viewSessions} />
+      </div>
 
       {attentionPods.length > 0 && (
         <section className="mb-6">
@@ -83,6 +107,12 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
             ))}
           </div>
         </section>
+      )}
+
+      {filteredPods.length === 0 && clusterPods.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          No pods match the active filters.
+        </p>
       )}
 
       {clusterPods.length === 0 && (
