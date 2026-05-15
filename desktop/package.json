@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/main.cjs",
   "scripts": {
-    "build": "tsc --noEmit && tsdown",
+    "build": "tsc --noEmit -p tsconfig.build.json && tsdown",
     "start": "electron dist/main.cjs",
     "dev": "tsdown && electron dist/main.cjs",
     "test": "vitest run --passWithNoTests",
