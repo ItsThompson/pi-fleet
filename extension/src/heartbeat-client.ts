@@ -1,0 +1,129 @@
+import {
+  SERVER_PORT,
+  HEARTBEAT_INTERVAL_MS,
+  type RegisterBody,
+  type HeartbeatBody,
+} from "@pi-fleet/shared";
+
+const BASE_URL = `http://127.0.0.1:${SERVER_PORT}`;
+const FAILURE_THRESHOLD = 3;
+const MAX_BACKOFF_MS = 30_000;
+
+export interface HeartbeatClientDeps {
+  /** Injectable fetch for testing. Defaults to global fetch. */
+  fetchFn?: typeof fetch;
+  /** Injectable timer for testing. Defaults to setInterval/clearInterval. */
+  setInterval?: (fn: () => void, ms: number) => ReturnType<typeof globalThis.setInterval>;
+  clearInterval?: (id: ReturnType<typeof globalThis.setInterval>) => void;
+}
+
+export interface HeartbeatClient {
+  register(body: RegisterBody): Promise<boolean>;
+  startHeartbeats(getSnapshot: () => Promise<HeartbeatBody> | HeartbeatBody): void;
+  stopHeartbeats(): void;
+  unregister(sessionId: string): Promise<boolean>;
+  /** Current consecutive failure count (exposed for testing). */
+  readonly failures: number;
+}
+
+function computeInterval(failures: number): number {
+  if (failures < FAILURE_THRESHOLD) return HEARTBEAT_INTERVAL_MS;
+  const exponent = failures - FAILURE_THRESHOLD + 1;
+  return Math.min(HEARTBEAT_INTERVAL_MS * Math.pow(2, exponent), MAX_BACKOFF_MS);
+}
+
+export function createHeartbeatClient(
+  deps: HeartbeatClientDeps = {},
+): HeartbeatClient {
+  const fetchFn = deps.fetchFn ?? globalThis.fetch;
+  const timerSet = deps.setInterval ?? globalThis.setInterval;
+  const timerClear = deps.clearInterval ?? globalThis.clearInterval;
+
+  let timer: ReturnType<typeof globalThis.setInterval> | null = null;
+  let failures = 0;
+
+  async function post(path: string, body: unknown): Promise<boolean> {
+    try {
+      const response = await fetchFn(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(5000),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  function scheduleNext(
+    getSnapshot: () => Promise<HeartbeatBody> | HeartbeatBody,
+  ): void {
+    const interval = computeInterval(failures);
+
+    timer = timerSet(async () => {
+      // Clear immediately to reschedule with potentially different interval
+      if (timer !== null) {
+        timerClear(timer);
+        timer = null;
+      }
+
+      try {
+        const snapshot = await getSnapshot();
+        const ok = await post(
+          `/api/sessions/${snapshot.sessionId}/heartbeat`,
+          snapshot,
+        );
+        if (ok) {
+          failures = 0;
+        } else {
+          failures++;
+        }
+      } catch {
+        failures++;
+      }
+
+      scheduleNext(getSnapshot);
+    }, interval);
+
+    // Don't keep the Node.js process alive for heartbeats
+    if (timer && typeof timer === "object" && "unref" in timer) {
+      timer.unref();
+    }
+  }
+
+  return {
+    get failures() {
+      return failures;
+    },
+
+    async register(body: RegisterBody): Promise<boolean> {
+      return post("/api/sessions/register", body);
+    },
+
+    startHeartbeats(
+      getSnapshot: () => Promise<HeartbeatBody> | HeartbeatBody,
+    ): void {
+      // Stop any existing heartbeat loop
+      if (timer !== null) {
+        timerClear(timer);
+        timer = null;
+      }
+      failures = 0;
+      scheduleNext(getSnapshot);
+    },
+
+    stopHeartbeats(): void {
+      if (timer !== null) {
+        timerClear(timer);
+        timer = null;
+      }
+    },
+
+    async unregister(sessionId: string): Promise<boolean> {
+      return post(`/api/sessions/${sessionId}/unregister`, {});
+    },
+  };
+}
+
+export { FAILURE_THRESHOLD, MAX_BACKOFF_MS, computeInterval };
