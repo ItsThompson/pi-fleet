@@ -92,6 +92,8 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
         break;
       case "session:updated":
         eventBus.broadcast({ type: "session:updated", data: event.session });
+        // Recompute pod state when session activity changes
+        podRegistry.handleSessionUpdated(event.session.sessionId);
         break;
       case "session:removed":
         eventBus.broadcast({

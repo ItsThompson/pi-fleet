@@ -89,6 +89,25 @@ export class PodRegistry {
   }
 
   /**
+   * Called when a session's data is updated (e.g., heartbeat with new activity).
+   * Recomputes the pod containing this session and emits pod:updated if state changed.
+   */
+  handleSessionUpdated(sessionId: string): void {
+    const pod = this.getPodForSession(sessionId);
+    if (!pod) return;
+
+    // Recompute the pod's current state from live session data
+    const freshPod = this.ownershipMap.has(pod.leadSessionId)
+      ? this.buildPod(pod.leadSessionId)
+      : this.buildSingleMemberPod(this.sessionRegistry.get(pod.leadSessionId)!);
+
+    // Only emit if state or attentionCount actually changed
+    if (freshPod.state !== pod.state || freshPod.attentionCount !== pod.attentionCount) {
+      this.emit({ type: "pod:updated", pod: freshPod });
+    }
+  }
+
+  /**
    * Called when a session registers. Re-evaluates pending ownership
    * to see if this new session is claimed by any parent.
    */
