@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import type { SSEEvent, RegisteredSession, Pod } from "@pi-fleet/shared";
+import type { SSEEvent, RegisteredSession, Pod, ClusterDefinition } from "@pi-fleet/shared";
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
+import { useClusterStore } from "@/stores/cluster-store";
 
 const MAX_BACKOFF_MS = 30_000;
 const INITIAL_BACKOFF_MS = 1_000;
@@ -35,6 +36,21 @@ async function fetchPods(baseUrl: string): Promise<Pod[]> {
   return data.pods ?? [];
 }
 
+async function fetchClusters(baseUrl: string): Promise<void> {
+  const { setClusters } = useClusterStore.getState();
+  try {
+    const response = await fetch(`${baseUrl}/api/clusters`);
+    if (!response.ok) return;
+    const data = await response.json();
+    setClusters(
+      data.clusters ?? [],
+      data.unclustered ?? { podIds: [], attentionCount: 0 },
+    );
+  } catch {
+    // Ignore fetch errors on reconnect
+  }
+}
+
 export function useSSE(): SSEConnectionState {
   const [connectionState, setConnectionState] = useState<SSEConnectionState>({
     connected: false,
@@ -50,6 +66,13 @@ export function useSSE(): SSEConnectionState {
   const handleEvent = useCallback((eventType: string, data: unknown) => {
     const { addSession, updateSession, removeSession } = useSessionStore.getState();
     const { addOrUpdatePod, removePod } = usePodStore.getState();
+    const {
+      addCluster,
+      updateCluster,
+      removeCluster,
+      reorderClusters,
+      handleAssignmentChanged,
+    } = useClusterStore.getState();
 
     switch (eventType) {
       case "session:added":
@@ -68,7 +91,23 @@ export function useSSE(): SSEConnectionState {
       case "pod:dissolved":
         removePod((data as { leadSessionId: string }).leadSessionId);
         break;
-      // connected and heartbeat are handled separately
+      case "cluster:created":
+        addCluster(data as ClusterDefinition);
+        break;
+      case "cluster:updated":
+        updateCluster(data as ClusterDefinition);
+        break;
+      case "cluster:deleted":
+        removeCluster((data as { clusterId: string }).clusterId);
+        break;
+      case "cluster:reordered":
+        reorderClusters((data as { orderedIds: string[] }).orderedIds);
+        break;
+      case "cluster:assignment-changed": {
+        const payload = data as { sessionId: string; clusterId: string | null };
+        handleAssignmentChanged(payload.sessionId, payload.clusterId);
+        break;
+      }
     }
   }, []);
 
@@ -94,6 +133,11 @@ export function useSSE(): SSEConnectionState {
       "pod:formed",
       "pod:updated",
       "pod:dissolved",
+      "cluster:created",
+      "cluster:updated",
+      "cluster:deleted",
+      "cluster:reordered",
+      "cluster:assignment-changed",
       "heartbeat",
     ];
 
@@ -152,6 +196,8 @@ export function useSSE(): SSEConnectionState {
     if (mountedRef.current) {
       setSessions(sessions);
       setPods(pods);
+      // Also refetch clusters on reconnect
+      fetchClusters(baseUrl);
     }
   }, []);
 
