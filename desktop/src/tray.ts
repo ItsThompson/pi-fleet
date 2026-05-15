@@ -1,4 +1,4 @@
-import { Tray, Menu, nativeImage } from "electron";
+import { Tray, Menu, nativeImage, app } from "electron";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { WindowManager } from "./window.js";
@@ -104,13 +104,14 @@ export function createTrayManager(deps: TrayManagerDeps): TrayManager {
 }
 
 /**
- * Resolve the tray icon path. Uses a bundled template image.
- * Falls back to an empty nativeImage if the asset is missing.
+ * Resolve the tray icon path.
+ * In production (packaged): extraResources/assets/trayTemplate.png
+ * In development: desktop/assets/trayTemplate.png relative to compiled output
  */
 function getTrayIconPath(): string {
-  // In production: icon is in the app resources directory
-  // In development: relative to the desktop package root
-  const resourcesPath =
-    process.resourcesPath ?? join(__dirname, "..");
-  return join(resourcesPath, "assets", "trayTemplate.png");
+  if (app.isPackaged) {
+    return join(process.resourcesPath, "assets", "trayTemplate.png");
+  }
+  // Development: desktop/dist/main.cjs → ../assets/trayTemplate.png
+  return join(__dirname, "..", "assets", "trayTemplate.png");
 }
