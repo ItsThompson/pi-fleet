@@ -61,7 +61,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 
       const contextUsage = toContextUsagePayload(ctx.getContextUsage());
 
-      await client.register({
+      const registerBody: Parameters<typeof client.register>[0] = {
         sessionId,
         pid: process.pid,
         cwd,
@@ -72,10 +72,17 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
         model,
         contextUsage,
         thinkingLevel,
-      });
+      };
 
-      // Start heartbeat loop
+      let registered = await client.register(registerBody);
+
+      // Start heartbeat loop (retries registration if server wasn't available)
       client.startHeartbeats(async (): Promise<HeartbeatBody> => {
+        // Retry registration until it succeeds
+        if (!registered) {
+          registered = await client.register(registerBody);
+        }
+
         // Refresh tmux target each heartbeat
         const freshTmux = await captureTmuxTarget(process.env, exec);
         if (freshTmux) lastKnownTmuxTarget = freshTmux.target;

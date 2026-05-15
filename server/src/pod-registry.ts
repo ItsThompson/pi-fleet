@@ -30,6 +30,12 @@ export class PodRegistry {
    */
   private readonly ownershipMap = new Map<string, string[]>();
 
+  /**
+   * Cache of last-emitted pod state per leadSessionId.
+   * Used to detect actual changes and avoid redundant pod:updated events.
+   */
+  private readonly lastEmittedState = new Map<string, { state: ActivityStatus; attentionCount: number }>();
+
   constructor(deps: PodRegistryDeps) {
     this.sessionRegistry = deps.sessionRegistry;
   }
@@ -43,6 +49,15 @@ export class PodRegistry {
   }
 
   private emit(event: PodEvent): void {
+    // Update last-emitted state cache
+    if (event.type === "pod:formed" || event.type === "pod:updated") {
+      this.lastEmittedState.set(event.pod.leadSessionId, {
+        state: event.pod.state,
+        attentionCount: event.pod.attentionCount,
+      });
+    } else if (event.type === "pod:dissolved") {
+      this.lastEmittedState.delete(event.leadSessionId);
+    }
     this.listeners.forEach((listener) => listener(event));
   }
 
@@ -93,18 +108,52 @@ export class PodRegistry {
    * Recomputes the pod containing this session and emits pod:updated if state changed.
    */
   handleSessionUpdated(sessionId: string): void {
-    const pod = this.getPodForSession(sessionId);
-    if (!pod) return;
+    // Find which pod this session belongs to
+    const leadId = this.findLeadForSession(sessionId);
+    if (!leadId) return;
+
+    const leadSession = this.sessionRegistry.get(leadId);
+    if (!leadSession) return;
 
     // Recompute the pod's current state from live session data
-    const freshPod = this.ownershipMap.has(pod.leadSessionId)
-      ? this.buildPod(pod.leadSessionId)
-      : this.buildSingleMemberPod(this.sessionRegistry.get(pod.leadSessionId)!);
+    const freshPod = this.ownershipMap.has(leadId)
+      ? this.buildPod(leadId)
+      : this.buildSingleMemberPod(leadSession);
 
-    // Only emit if state or attentionCount actually changed
-    if (freshPod.state !== pod.state || freshPod.attentionCount !== pod.attentionCount) {
+    // Compare against last-emitted state to avoid redundant events
+    const lastState = this.lastEmittedState.get(leadId);
+    if (
+      !lastState ||
+      freshPod.state !== lastState.state ||
+      freshPod.attentionCount !== lastState.attentionCount
+    ) {
+      this.lastEmittedState.set(leadId, {
+        state: freshPod.state,
+        attentionCount: freshPod.attentionCount,
+      });
       this.emit({ type: "pod:updated", pod: freshPod });
     }
+  }
+
+  /**
+   * Find the lead session ID for the pod containing this session.
+   */
+  private findLeadForSession(sessionId: string): string | undefined {
+    // Check if this session IS a lead (has ownership or is standalone)
+    if (this.sessionRegistry.get(sessionId)) {
+      // Check if it's a child claimed by a parent
+      const session = this.sessionRegistry.get(sessionId);
+      if (session?.subagentId) {
+        for (const [parentId, subagentIds] of this.ownershipMap) {
+          if (subagentIds.includes(session.subagentId)) {
+            return parentId;
+          }
+        }
+      }
+      // It's either a standalone session or a parent itself
+      return sessionId;
+    }
+    return undefined;
   }
 
   /**
