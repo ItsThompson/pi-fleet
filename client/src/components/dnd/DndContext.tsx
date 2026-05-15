@@ -8,7 +8,7 @@ import {
   useSensors,
   closestCenter,
 } from "@dnd-kit/core";
-import type { DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
+import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useClusterStore } from "@/stores/cluster-store";
 import { usePodStore } from "@/stores/pod-store";
