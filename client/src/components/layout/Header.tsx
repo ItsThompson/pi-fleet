@@ -1,8 +1,9 @@
 import type { SSEConnectionState } from "@/hooks/useSSE";
+import { useHealth } from "@/hooks/useHealth";
 import { useSessionStore } from "@/stores/session-store";
 import { NotificationPanel } from "@/components/attention/NotificationPanel";
 import { AttentionBadge } from "@/components/attention/AttentionBadge";
-import { Bell, Wifi, WifiOff } from "lucide-react";
+import { Bell, Wifi, WifiOff, AlertTriangle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 interface HeaderProps {
@@ -80,6 +81,39 @@ export function Header({ connectionState }: HeaderProps) {
           Reconnecting{connectionState.attemptCount > 0 && ` (attempt ${connectionState.attemptCount})`}...
         </div>
       )}
+      <PiWatchNotice />
     </header>
+  );
+}
+
+/**
+ * Non-blocking notice shown when pi-watch extension is detected.
+ * Suggests removal to avoid duplicate registrations.
+ */
+function PiWatchNotice() {
+  const health = useHealth();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed || !health?.piWatchDetected) return null;
+
+  return (
+    <div className="mt-1 rounded bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 text-xs text-orange-300 flex items-start gap-2">
+      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+      <div className="flex-1">
+        <span className="font-medium">pi-watch extension detected.</span>{" "}
+        Consider removing it to avoid duplicate session registrations:{" "}
+        <code className="bg-secondary px-1 py-0.5 rounded text-[10px]">
+          rm ~/.pi/agent/extensions/pi-watch
+        </code>
+      </div>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="text-orange-400 hover:text-orange-200 shrink-0"
+        aria-label="Dismiss pi-watch notice"
+      >
+        ×
+      </button>
+    </div>
   );
 }

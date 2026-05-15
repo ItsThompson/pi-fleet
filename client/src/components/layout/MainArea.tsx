@@ -19,10 +19,18 @@ function EmptyState() {
         Sessions will appear here when pi is running with the pi-fleet extension installed.
         Start a pi session in your terminal to get started.
       </p>
-      <p className="text-xs text-muted-foreground mt-4 max-w-md">
-        Install the extension by symlinking it into{" "}
-        <code className="bg-secondary px-1 py-0.5 rounded">~/.pi/agent/extensions/pi-fleet</code>
-      </p>
+      <div className="mt-6 bg-secondary/50 border rounded-lg p-4 max-w-md text-left">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Quick Setup</p>
+        <p className="text-xs text-muted-foreground mb-2">
+          Install the pi-fleet extension by creating a symlink:
+        </p>
+        <code className="block bg-background px-3 py-2 rounded text-[11px] font-mono text-foreground/80 break-all">
+          ln -s /path/to/pi-fleet/extension ~/.pi/agent/extensions/pi-fleet
+        </code>
+        <p className="text-[10px] text-muted-foreground/70 mt-2">
+          New pi sessions will automatically register after installation. No restart required.
+        </p>
+      </div>
     </div>
   );
 }

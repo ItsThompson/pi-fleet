@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { SessionRegistry } from "../session-registry.js";
 import type { PodRegistry } from "../pod-registry.js";
+import { detectPiWatch } from "../utils/pi-watch-detect.js";
 
 export function registerHealthRoute(
   app: FastifyInstance,
@@ -17,6 +18,7 @@ export function registerHealthRoute(
       sessions: registry.size,
       pods: podRegistry.podCount,
       version: "0.1.0",
+      piWatchDetected: detectPiWatch(),
     });
   });
 }
