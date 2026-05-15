@@ -7,6 +7,7 @@ import type { ContextUsagePayload, HeartbeatBody } from "@pi-fleet/shared";
 import { createActivityTracker } from "./activity-tracker.js";
 import { createHeartbeatClient } from "./heartbeat-client.js";
 import { createSessionDataCollector } from "./session-data.js";
+import { createPodReporter } from "./pod-reporter.js";
 import { captureTmuxTarget, type Exec } from "./tmux-target.js";
 import { execFile } from "node:child_process";
 
@@ -93,6 +94,13 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
           ...dataCollector.snapshot(),
         };
       });
+
+      // Start pod reporter: inter-extension protocol for ownership reporting
+      const podReporter = createPodReporter({
+        events: pi.events,
+        sessionId,
+      });
+      podReporter.requestInitialState();
     } catch (err) {
       console.error(LOG_PREFIX, "session_start error:", err);
     }
