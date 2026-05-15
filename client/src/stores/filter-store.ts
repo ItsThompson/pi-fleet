@@ -4,9 +4,6 @@ import type { ActivityStatus, Pod, RegisteredSession } from "@pi-fleet/shared";
 /** Activity states that constitute "needs attention" */
 const ATTENTION_STATES: Set<ActivityStatus> = new Set(["pending_approval", "idle"]);
 
-/** Activity states mapped to the "Working" filter badge */
-const WORKING_STATES: Set<ActivityStatus> = new Set(["processing", "running_tool"]);
-
 interface FilterStore {
   /** Active state filters (empty = show all) */
   activeFilters: Set<ActivityStatus>;
@@ -30,21 +27,11 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
   toggleFilter: (status) => {
     set((state) => {
       const next = new Set(state.activeFilters);
-      // "Working" groups processing + running_tool together
-      const statuses = WORKING_STATES.has(status)
-        ? Array.from(WORKING_STATES)
-        : [status];
-
-      // If any of the group is active, remove all; otherwise add all
-      const isActive = statuses.some((s) => next.has(s));
-      statuses.forEach((s) => {
-        if (isActive) {
-          next.delete(s);
-        } else {
-          next.add(s);
-        }
-      });
-
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
       return { activeFilters: next };
     });
   },
@@ -71,4 +58,4 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
   },
 }));
 
-export { ATTENTION_STATES, WORKING_STATES };
+export { ATTENTION_STATES };

@@ -8,10 +8,7 @@ interface FilterBadgesProps {
 }
 
 interface FilterBadgeConfig {
-  /** The status used to trigger toggleFilter */
-  triggerStatus: ActivityStatus;
-  /** All statuses this badge represents */
-  statuses: ActivityStatus[];
+  status: ActivityStatus;
   label: string;
   activeColor: string;
   dotColor: string;
@@ -19,32 +16,30 @@ interface FilterBadgeConfig {
 
 const FILTER_CONFIGS: FilterBadgeConfig[] = [
   {
-    triggerStatus: "pending_approval",
-    statuses: ["pending_approval"],
-    label: "Needs Approval",
+    status: "pending_approval",
+    label: "Pending Approval",
     activeColor: "bg-red-500/20 border-red-500 text-red-400",
     dotColor: "bg-red-500",
   },
   {
-    triggerStatus: "idle",
-    statuses: ["idle"],
+    status: "idle",
     label: "Idle",
     activeColor: "bg-yellow-500/20 border-yellow-500 text-yellow-400",
     dotColor: "bg-yellow-500",
   },
   {
-    triggerStatus: "processing",
-    statuses: ["processing", "running_tool"],
-    label: "Working",
+    status: "running_tool",
+    label: "Running Tool",
     activeColor: "bg-green-500/20 border-green-500 text-green-400",
     dotColor: "bg-green-500",
   },
+  {
+    status: "processing",
+    label: "Processing",
+    activeColor: "bg-blue-500/20 border-blue-500 text-blue-400",
+    dotColor: "bg-blue-500",
+  },
 ];
-
-function computeGroupCount(sessions: RegisteredSession[], statuses: ActivityStatus[]): number {
-  const statusSet = new Set(statuses);
-  return sessions.filter((session) => statusSet.has(session.activity)).length;
-}
 
 export function FilterBadges({ sessions }: FilterBadgesProps) {
   const activeFilters = useFilterStore((state) => state.activeFilters);
@@ -53,17 +48,16 @@ export function FilterBadges({ sessions }: FilterBadgesProps) {
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="State filters">
       {FILTER_CONFIGS.map((config) => {
-        const count = computeGroupCount(sessions, config.statuses);
+        const count = sessions.filter((s) => s.activity === config.status).length;
         if (count === 0) return null;
 
-        // Active if any of the group's statuses are in activeFilters
-        const isActive = config.statuses.some((s) => activeFilters.has(s));
+        const isActive = activeFilters.has(config.status);
 
         return (
           <button
-            key={config.triggerStatus}
+            key={config.status}
             type="button"
-            onClick={() => toggleFilter(config.triggerStatus)}
+            onClick={() => toggleFilter(config.status)}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
               isActive
