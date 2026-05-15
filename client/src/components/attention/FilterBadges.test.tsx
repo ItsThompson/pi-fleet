@@ -34,9 +34,38 @@ describe("FilterBadges", () => {
 
     expect(screen.getByText("Idle (2)")).toBeInTheDocument();
     expect(screen.getByText("Working (1)")).toBeInTheDocument();
-    // No pending_approval or running_tool sessions
     expect(screen.queryByText(/Needs Approval/)).not.toBeInTheDocument();
+  });
+
+  it("Working badge combines processing and running_tool counts", () => {
+    const sessions = [
+      buildSession({ sessionId: "s1", activity: "processing" }),
+      buildSession({ sessionId: "s2", activity: "running_tool" }),
+      buildSession({ sessionId: "s3", activity: "running_tool" }),
+    ];
+
+    render(<FilterBadges sessions={sessions} />);
+
+    // Single "Working" badge with combined count
+    expect(screen.getByText("Working (3)")).toBeInTheDocument();
+    // No separate "Running Tool" badge
     expect(screen.queryByText(/Running Tool/)).not.toBeInTheDocument();
+  });
+
+  it("clicking Working badge toggles both processing and running_tool", () => {
+    const sessions = [
+      buildSession({ sessionId: "s1", activity: "processing" }),
+      buildSession({ sessionId: "s2", activity: "running_tool" }),
+    ];
+
+    render(<FilterBadges sessions={sessions} />);
+
+    const badge = screen.getByRole("button", { name: /Filter Working/i });
+    fireEvent.click(badge);
+
+    const { activeFilters } = useFilterStore.getState();
+    expect(activeFilters.has("processing")).toBe(true);
+    expect(activeFilters.has("running_tool")).toBe(true);
   });
 
   it("clicking a badge toggles the filter", () => {

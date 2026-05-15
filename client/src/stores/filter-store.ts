@@ -30,11 +30,21 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
   toggleFilter: (status) => {
     set((state) => {
       const next = new Set(state.activeFilters);
-      if (next.has(status)) {
-        next.delete(status);
-      } else {
-        next.add(status);
-      }
+      // "Working" groups processing + running_tool together
+      const statuses = WORKING_STATES.has(status)
+        ? Array.from(WORKING_STATES)
+        : [status];
+
+      // If any of the group is active, remove all; otherwise add all
+      const isActive = statuses.some((s) => next.has(s));
+      statuses.forEach((s) => {
+        if (isActive) {
+          next.delete(s);
+        } else {
+          next.add(s);
+        }
+      });
+
       return { activeFilters: next };
     });
   },

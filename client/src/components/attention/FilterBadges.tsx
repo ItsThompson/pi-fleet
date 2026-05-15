@@ -1,5 +1,5 @@
 import type { ActivityStatus, RegisteredSession } from "@pi-fleet/shared";
-import { useFilterStore } from "@/stores/filter-store";
+import { useFilterStore, WORKING_STATES } from "@/stores/filter-store";
 import { cn } from "@/lib/utils";
 
 interface FilterBadgesProps {
@@ -7,42 +7,43 @@ interface FilterBadgesProps {
   sessions: RegisteredSession[];
 }
 
-interface FilterConfig {
-  status: ActivityStatus;
+interface FilterBadgeConfig {
+  /** The status used to trigger toggleFilter */
+  triggerStatus: ActivityStatus;
+  /** All statuses this badge represents */
+  statuses: ActivityStatus[];
   label: string;
   activeColor: string;
   dotColor: string;
 }
 
-const FILTER_CONFIGS: FilterConfig[] = [
+const FILTER_CONFIGS: FilterBadgeConfig[] = [
   {
-    status: "pending_approval",
+    triggerStatus: "pending_approval",
+    statuses: ["pending_approval"],
     label: "Needs Approval",
     activeColor: "bg-red-500/20 border-red-500 text-red-400",
     dotColor: "bg-red-500",
   },
   {
-    status: "idle",
+    triggerStatus: "idle",
+    statuses: ["idle"],
     label: "Idle",
     activeColor: "bg-yellow-500/20 border-yellow-500 text-yellow-400",
     dotColor: "bg-yellow-500",
   },
   {
-    status: "processing",
+    triggerStatus: "processing",
+    statuses: ["processing", "running_tool"],
     label: "Working",
-    activeColor: "bg-blue-500/20 border-blue-500 text-blue-400",
-    dotColor: "bg-blue-500",
-  },
-  {
-    status: "running_tool",
-    label: "Running Tool",
     activeColor: "bg-green-500/20 border-green-500 text-green-400",
     dotColor: "bg-green-500",
   },
 ];
 
-function computeCount(sessions: RegisteredSession[], status: ActivityStatus): number {
-  return sessions.filter((session) => session.activity === status).length;
+function computeGroupCount(sessions: RegisteredSession[], statuses: ActivityStatus[]): number {
+  const statusSet = new Set(statuses);
+  return sessions.filter((session) => statusSet.has(session.activity)).length;
 }
 
 export function FilterBadges({ sessions }: FilterBadgesProps) {
@@ -52,16 +53,17 @@ export function FilterBadges({ sessions }: FilterBadgesProps) {
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="State filters">
       {FILTER_CONFIGS.map((config) => {
-        const count = computeCount(sessions, config.status);
+        const count = computeGroupCount(sessions, config.statuses);
         if (count === 0) return null;
 
-        const isActive = activeFilters.has(config.status);
+        // Active if any of the group's statuses are in activeFilters
+        const isActive = config.statuses.some((s) => activeFilters.has(s));
 
         return (
           <button
-            key={config.status}
+            key={config.triggerStatus}
             type="button"
-            onClick={() => toggleFilter(config.status)}
+            onClick={() => toggleFilter(config.triggerStatus)}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
               isActive

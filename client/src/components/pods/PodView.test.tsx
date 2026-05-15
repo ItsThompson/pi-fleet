@@ -50,7 +50,7 @@ describe("PodView - state grouping", () => {
 
     // Verify grouping headers with counts
     expect(screen.getByText("Needs Attention (2)")).toBeInTheDocument();
-    expect(screen.getByText("Working (2)")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Working (2)" })).toBeInTheDocument();
 
     // Verify sessions are rendered
     expect(screen.getByText("idle-agent")).toBeInTheDocument();
