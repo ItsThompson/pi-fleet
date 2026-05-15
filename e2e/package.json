@@ -4,15 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "echo \"e2e tests: use test:e2e task\"",
-    "test:e2e": "npx playwright test"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
     "@pi-fleet/shared": "*",
-    "playwright": "^1.58.2",
-    "tsx": "^4.19.4",
+    "@pi-fleet/server": "*",
     "@types/node": "^22.15.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.18"
   }
 }
