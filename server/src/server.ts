@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import fastifyStatic from "@fastify/static";
 import type { FastifyInstance } from "fastify";
 import { SERVER_PORT } from "@pi-fleet/shared";
 import { SessionRegistry } from "./session-registry.js";
@@ -19,6 +20,8 @@ export interface ServerDeps {
   port?: number;
   /** Override the host (defaults to 127.0.0.1) */
   host?: string;
+  /** Absolute path to client dist directory for static file serving */
+  staticDir?: string;
   /** Inject a custom SessionRegistry (for testing) */
   registry?: SessionRegistry;
   /** Inject a custom PodRegistry (for testing) */
@@ -62,6 +65,14 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
   const startTime = Date.now();
 
   const app = Fastify({ logger: false });
+
+  // Serve client static files when staticDir is provided
+  if (deps.staticDir) {
+    app.register(fastifyStatic, {
+      root: deps.staticDir,
+      prefix: "/",
+    });
+  }
 
   // Register routes
   registerSessionRoutes(app, registry);

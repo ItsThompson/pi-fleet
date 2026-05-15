@@ -1,4 +1,5 @@
-import { dialog } from "electron";
+import { dialog, app } from "electron";
+import { join } from "node:path";
 import { createServer as createPiFleetServer } from "@pi-fleet/server";
 import type { PiFleetServer } from "@pi-fleet/server";
 import { SERVER_PORT } from "@pi-fleet/shared";
@@ -23,7 +24,8 @@ export function createEmbeddedServer(): EmbeddedServer {
 
   async function attemptStart(): Promise<boolean> {
     try {
-      instance = createPiFleetServer({ port: SERVER_PORT, host: "127.0.0.1" });
+      const staticDir = resolveClientDist();
+      instance = createPiFleetServer({ port: SERVER_PORT, host: "127.0.0.1", staticDir });
       await instance.start();
       return true;
     } catch (error) {
@@ -94,4 +96,17 @@ function isAddressInUse(error: unknown): boolean {
     );
   }
   return false;
+}
+
+/**
+ * Resolve the client dist directory.
+ * In production (packaged): extraResources/client/dist
+ * In development (monorepo): ../client/dist relative to project root
+ */
+function resolveClientDist(): string {
+  if (app.isPackaged) {
+    return join(process.resourcesPath, "client", "dist");
+  }
+  // Development: desktop/dist/main.cjs → ../../client/dist
+  return join(__dirname, "..", "..", "client", "dist");
 }
