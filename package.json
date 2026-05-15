@@ -1,0 +1,32 @@
+{
+  "name": "pi-fleet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "client",
+    "desktop",
+    "extension",
+    "e2e"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "eslint '**/*.{ts,tsx}' --ignore-pattern '**/dist/**'",
+    "app": "turbo build && npm start --prefix desktop",
+    "dist": "turbo build && npm run dist --prefix desktop"
+  },
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.3",
+    "turbo": "^2.4.0",
+    "typescript-eslint": "^8.57.0"
+  }
+}
