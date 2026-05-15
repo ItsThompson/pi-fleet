@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { NotificationPanel } from "./NotificationPanel";
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
+import { useClusterStore } from "@/stores/cluster-store";
 import type { RegisteredSession, Pod } from "@pi-fleet/shared";
 
 function buildSession(overrides?: Partial<RegisteredSession>): RegisteredSession {
@@ -37,6 +38,7 @@ describe("NotificationPanel", () => {
       activityChangedAt: new Map(),
     });
     usePodStore.setState({ pods: new Map() });
+    useClusterStore.setState({ clusters: [], unclustered: { podIds: [], attentionCount: 0 } });
   });
 
   it("renders empty state when no sessions need attention", () => {
@@ -130,5 +132,33 @@ describe("NotificationPanel", () => {
     fireEvent.click(closeButton);
 
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("displays cluster name for sessions in a cluster", () => {
+    const sessions = new Map([
+      ["session-1", buildSession({ sessionId: "session-1", activity: "idle", agentName: "clustered-agent" })],
+    ]);
+    const pods = new Map([
+      ["pod-lead", buildPod({ leadSessionId: "pod-lead", memberSessionIds: ["session-1"], displayName: "My Pod" })],
+    ]);
+    const activityChangedAt = new Map([["session-1", "2025-01-01T00:01:00Z"]]);
+
+    useSessionStore.setState({ sessions, activityChangedAt });
+    usePodStore.setState({ pods });
+    useClusterStore.setState({
+      clusters: [{
+        id: "c1",
+        name: "Work",
+        directories: [],
+        sortOrder: 0,
+        podIds: ["pod-lead"],
+        attentionCount: 1,
+      }],
+      unclustered: { podIds: [], attentionCount: 0 },
+    });
+
+    render(<NotificationPanel onClose={() => {}} />);
+
+    expect(screen.getByText(/Cluster: Work/)).toBeInTheDocument();
   });
 });

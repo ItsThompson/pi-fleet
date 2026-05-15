@@ -1,5 +1,5 @@
 import type { ActivityStatus, RegisteredSession } from "@pi-fleet/shared";
-import { useFilterStore, WORKING_STATES } from "@/stores/filter-store";
+import { useFilterStore } from "@/stores/filter-store";
 import { cn } from "@/lib/utils";
 
 interface FilterBadgesProps {

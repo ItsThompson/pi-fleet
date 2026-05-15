@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { deriveNotificationEntries } from "./derive-notifications";
-import type { RegisteredSession, Pod } from "@pi-fleet/shared";
+import type { RegisteredSession, Pod, ClusterDefinition } from "@pi-fleet/shared";
 
 function buildSession(overrides?: Partial<RegisteredSession>): RegisteredSession {
   return {
@@ -27,6 +27,21 @@ function buildPod(overrides?: Partial<Pod>): Pod {
   };
 }
 
+interface ClusterWithPods extends ClusterDefinition {
+  podIds: string[];
+}
+
+function buildCluster(overrides?: Partial<ClusterWithPods>): ClusterWithPods {
+  return {
+    id: "cluster-1",
+    name: "Work",
+    directories: [],
+    sortOrder: 0,
+    podIds: [],
+    ...overrides,
+  };
+}
+
 describe("deriveNotificationEntries", () => {
   it("returns empty array when no sessions need attention", () => {
     const sessions = new Map([
@@ -35,7 +50,7 @@ describe("deriveNotificationEntries", () => {
     const pods = new Map<string, Pod>();
     const activityChangedAt = new Map([["s1", "2025-01-01T00:00:00Z"]]);
 
-    const result = deriveNotificationEntries(sessions, pods, activityChangedAt);
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, []);
     expect(result).toEqual([]);
   });
 
@@ -54,7 +69,7 @@ describe("deriveNotificationEntries", () => {
       ["s4", "2025-01-01T00:04:00Z"],
     ]);
 
-    const result = deriveNotificationEntries(sessions, pods, activityChangedAt);
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, []);
     expect(result).toHaveLength(2);
     expect(result[0].sessionId).toBe("s2"); // More recent
     expect(result[1].sessionId).toBe("s1");
@@ -73,7 +88,7 @@ describe("deriveNotificationEntries", () => {
       ["s3", "2025-01-01T00:03:00Z"],
     ]);
 
-    const result = deriveNotificationEntries(sessions, pods, activityChangedAt);
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, []);
     expect(result[0].sessionId).toBe("s2");
     expect(result[1].sessionId).toBe("s3");
     expect(result[2].sessionId).toBe("s1");
@@ -88,7 +103,7 @@ describe("deriveNotificationEntries", () => {
     ]);
     const activityChangedAt = new Map([["s1", "2025-01-01T00:01:00Z"]]);
 
-    const result = deriveNotificationEntries(sessions, pods, activityChangedAt);
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, []);
     expect(result[0].podDisplayName).toBe("My Pod");
   });
 
@@ -103,7 +118,7 @@ describe("deriveNotificationEntries", () => {
       ["s2", "2025-01-01T00:01:00Z"],
     ]);
 
-    const result = deriveNotificationEntries(sessions, pods, activityChangedAt);
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, []);
     expect(result[0].sessionName).toBe("named-agent");
     expect(result[1].sessionName).toBe("my-project");
   });
@@ -115,7 +130,46 @@ describe("deriveNotificationEntries", () => {
     const pods = new Map<string, Pod>();
     const activityChangedAt = new Map<string, string>(); // empty
 
-    const result = deriveNotificationEntries(sessions, pods, activityChangedAt);
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, []);
     expect(result[0].stateChangedAt).toBe("2025-01-01T00:10:00Z");
+  });
+
+  it("resolves cluster name from pod membership", () => {
+    const sessions = new Map([
+      ["s1", buildSession({ sessionId: "s1", activity: "idle", agentName: "agent-in-cluster" })],
+      ["s2", buildSession({ sessionId: "s2", activity: "pending_approval", agentName: "agent-unclustered" })],
+    ]);
+    const pods = new Map([
+      ["pod-lead-1", buildPod({ leadSessionId: "pod-lead-1", memberSessionIds: ["s1"], displayName: "Clustered Pod" })],
+      ["pod-lead-2", buildPod({ leadSessionId: "pod-lead-2", memberSessionIds: ["s2"], displayName: "Unclustered Pod" })],
+    ]);
+    const activityChangedAt = new Map([
+      ["s1", "2025-01-01T00:02:00Z"],
+      ["s2", "2025-01-01T00:01:00Z"],
+    ]);
+    const clusters = [
+      buildCluster({ id: "c1", name: "Work", podIds: ["pod-lead-1"] }),
+    ];
+
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, clusters);
+
+    expect(result[0].sessionId).toBe("s1");
+    expect(result[0].clusterName).toBe("Work");
+    expect(result[1].sessionId).toBe("s2");
+    expect(result[1].clusterName).toBeNull();
+  });
+
+  it("returns null clusterName when session has no pod", () => {
+    const sessions = new Map([
+      ["s1", buildSession({ sessionId: "s1", activity: "idle" })],
+    ]);
+    const pods = new Map<string, Pod>(); // no pods
+    const activityChangedAt = new Map([["s1", "2025-01-01T00:01:00Z"]]);
+    const clusters = [
+      buildCluster({ id: "c1", name: "Work", podIds: ["some-other-pod"] }),
+    ];
+
+    const result = deriveNotificationEntries(sessions, pods, activityChangedAt, clusters);
+    expect(result[0].clusterName).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
+import { useClusterStore } from "@/stores/cluster-store";
 import { deriveNotificationEntries } from "./derive-notifications";
 import { NotificationItem } from "./NotificationItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,8 +22,9 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
   const sessions = useSessionStore((state) => state.sessions);
   const activityChangedAt = useSessionStore((state) => state.activityChangedAt);
   const pods = usePodStore((state) => state.pods);
+  const clusters = useClusterStore((state) => state.clusters);
 
-  const entries = deriveNotificationEntries(sessions, pods, activityChangedAt);
+  const entries = deriveNotificationEntries(sessions, pods, activityChangedAt, clusters);
 
   return (
     <div className="absolute right-0 top-full mt-1 w-80 z-50 rounded-md border bg-popover shadow-lg">
