@@ -9,6 +9,9 @@ import { registerPodRoutes } from "./routes/pods.js";
 import { registerEventsRoute } from "./routes/events.js";
 import { registerHealthRoute } from "./routes/health.js";
 import { registerOpenTerminalRoute } from "./routes/open-terminal.js";
+import { registerClusterRoutes } from "./routes/clusters.js";
+import { createClusterStore, type ClusterStore } from "./cluster-store.js";
+import { getConfigPath } from "@pi-fleet/shared";
 import { log } from "./utils/logger.js";
 
 export interface ServerDeps {
@@ -22,6 +25,10 @@ export interface ServerDeps {
   podRegistry?: PodRegistry;
   /** Inject a custom EventBus (for testing) */
   eventBus?: EventBus;
+  /** Inject a custom ClusterStore (for testing) */
+  clusterStore?: ClusterStore;
+  /** Override config path (for testing) */
+  configPath?: string;
 }
 
 export interface PiFleetServer {
@@ -29,6 +36,7 @@ export interface PiFleetServer {
   registry: SessionRegistry;
   podRegistry: PodRegistry;
   eventBus: EventBus;
+  clusterStore: ClusterStore;
   start: () => Promise<void>;
   stop: () => Promise<void>;
 }
@@ -44,6 +52,13 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
   const podRegistry =
     deps.podRegistry ?? new PodRegistry({ sessionRegistry: registry });
   const eventBus = deps.eventBus ?? new EventBus();
+  const configPath = deps.configPath ?? getConfigPath();
+  const clusterStore =
+    deps.clusterStore ??
+    createClusterStore({
+      configPath,
+      onChange: () => {},
+    });
   const startTime = Date.now();
 
   const app = Fastify({ logger: false });
@@ -54,6 +69,7 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
   registerEventsRoute(app, eventBus);
   registerHealthRoute(app, registry, podRegistry, startTime);
   registerOpenTerminalRoute(app, registry);
+  registerClusterRoutes(app, clusterStore, podRegistry, registry, eventBus);
 
   // Single event bridge: registry changes → EventBus broadcasts
   registry.onEvent((event) => {
@@ -127,6 +143,7 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
   }
 
   async function stop(): Promise<void> {
+    clusterStore.dispose();
     registry.dispose();
     await app.close();
     log({
@@ -135,5 +152,5 @@ export function createServer(deps: ServerDeps = {}): PiFleetServer {
     });
   }
 
-  return { app, registry, podRegistry, eventBus, start, stop };
+  return { app, registry, podRegistry, eventBus, clusterStore, start, stop };
 }
