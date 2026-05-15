@@ -10,4 +10,5 @@ export {
   registerBodySchema,
   heartbeatBodySchema,
   ownershipBodySchema,
+  openTerminalBodySchema,
 } from "./schemas.js";
