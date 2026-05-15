@@ -4,7 +4,7 @@ import { useSessionStore } from "@/stores/session-store";
 import { NotificationPanel } from "@/components/attention/NotificationPanel";
 import { AttentionBadge } from "@/components/attention/AttentionBadge";
 import { Bell, Wifi, WifiOff, AlertTriangle } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type CSSProperties } from "react";
 
 interface HeaderProps {
   connectionState: SSEConnectionState;
@@ -41,10 +41,10 @@ export function Header({ connectionState }: HeaderProps) {
   }, [panelOpen]);
 
   return (
-    <header className="border-b px-4 py-2 shrink-0">
+    <header className="border-b px-4 py-2 shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <h1 className="text-sm font-semibold">Pi Fleet</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" style={{ WebkitAppRegion: "no-drag" } as CSSProperties}>
           {/* Notification bell */}
           <div className="relative" ref={panelRef}>
             <button

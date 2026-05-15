@@ -3,11 +3,11 @@ import type { ConfigManager } from "./config.js";
 
 /** Window dimension constraints per spec (10-nonfunctional.md) */
 export const WINDOW_DEFAULTS = {
-  width: 420,
+  width: 600,
   height: 680,
   minWidth: 360,
-  minHeight: 400,
-  maxWidth: 600,
+  minHeight: 500,
+  maxWidth: 800,
   maxHeight: 900,
 } as const;
 
@@ -55,7 +55,7 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
       maxWidth: WINDOW_DEFAULTS.maxWidth,
       maxHeight: WINDOW_DEFAULTS.maxHeight,
       resizable: true,
-      movable: false,
+      movable: true,
       frame: false,
       show: false,
       alwaysOnTop: true,
@@ -86,7 +86,9 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
   }
 
   function toggleVisibility(): void {
-    if (!window) return;
+    if (!window) {
+      return;
+    }
     if (window.isVisible()) {
       window.hide();
     } else {
@@ -99,8 +101,11 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
   }
 
   function setGhostMode(enabled: boolean, opacity?: number): void {
-    if (!window) return;
-    const resolvedOpacity = opacity ?? configManager.get().preferences.ghostOpacity;
+    if (!window) {
+      return;
+    }
+    const resolvedOpacity =
+      opacity ?? configManager.get().preferences.ghostOpacity;
     applyGhostMode(window, enabled, resolvedOpacity);
     configManager.set("ghostMode", enabled);
   }
