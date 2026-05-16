@@ -6,8 +6,9 @@
   "main": "dist/main.cjs",
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.build.json && tsdown",
-    "start": "electron dist/main.cjs",
-    "dev": "tsdown && electron dist/main.cjs",
+    "start": "node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
+    "dev": "tsdown && node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
+    "postinstall": "node scripts/patch-electron-plist.mjs",
     "test": "vitest run --passWithNoTests",
     "dist": "tsdown && npx electron-builder --mac"
   },

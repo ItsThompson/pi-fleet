@@ -8,6 +8,7 @@ let lastConstructorOpts: Record<string, unknown> = {};
 const mockWindow = {
   loadURL: vi.fn(),
   show: vi.fn(),
+  showInactive: vi.fn(),
   hide: vi.fn(),
   focus: vi.fn(),
   isVisible: vi.fn(() => false),
@@ -36,6 +37,14 @@ vi.mock("electron", () => {
     },
   };
 });
+
+/** Simulate the ready-to-show event firing */
+function triggerReadyToShow(): void {
+  const call = mockWindow.once.mock.calls.find(
+    ([event]: [string]) => event === "ready-to-show",
+  );
+  if (call) call[1]();
+}
 
 function buildConfigManager(
   overrides?: Partial<PiFleetConfig["preferences"]>,
@@ -104,13 +113,25 @@ describe("createWindowManager", () => {
     expect(webPrefs.preload).toBe("/path/to/preload.cjs");
   });
 
-  it("createWindow applies ghost mode if persisted in config", () => {
+  it("createWindow uses showInactive on ready-to-show", () => {
+    const manager = createWindowManager({
+      configManager: buildConfigManager(),
+      preloadPath: "/path/to/preload.cjs",
+    });
+    manager.createWindow("http://127.0.0.1:8314");
+    triggerReadyToShow();
+
+    expect(mockWindow.showInactive).toHaveBeenCalled();
+    expect(mockWindow.show).not.toHaveBeenCalled();
+  });
+
+  it("createWindow applies ghost mode via opacity on ready-to-show", () => {
     const manager = createWindowManager({
       configManager: buildConfigManager({ ghostMode: true, ghostOpacity: 0.5 }),
       preloadPath: "/path/to/preload.cjs",
     });
-
     manager.createWindow("http://127.0.0.1:8314");
+    triggerReadyToShow();
 
     expect(mockWindow.setIgnoreMouseEvents).toHaveBeenCalledWith(true, {
       forward: true,
@@ -118,31 +139,41 @@ describe("createWindowManager", () => {
     expect(mockWindow.setOpacity).toHaveBeenCalledWith(0.5);
   });
 
-  it("toggleVisibility shows hidden window", () => {
+  it("toggleVisibility hides via opacity (no show/hide calls)", () => {
     const manager = createWindowManager({
       configManager: buildConfigManager(),
       preloadPath: "/path/to/preload.cjs",
     });
     manager.createWindow("http://127.0.0.1:8314");
+    triggerReadyToShow();
+    vi.clearAllMocks();
 
-    mockWindow.isVisible.mockReturnValue(false);
+    // Toggle to hidden
     manager.toggleVisibility();
 
-    expect(mockWindow.show).toHaveBeenCalled();
-    expect(mockWindow.focus).toHaveBeenCalled();
+    expect(mockWindow.setOpacity).toHaveBeenCalledWith(0);
+    expect(mockWindow.setIgnoreMouseEvents).toHaveBeenCalledWith(true);
+    expect(mockWindow.hide).not.toHaveBeenCalled();
+    expect(manager.isVisible()).toBe(false);
   });
 
-  it("toggleVisibility hides visible window", () => {
+  it("toggleVisibility restores via opacity (no show/hide calls)", () => {
     const manager = createWindowManager({
       configManager: buildConfigManager(),
       preloadPath: "/path/to/preload.cjs",
     });
     manager.createWindow("http://127.0.0.1:8314");
+    triggerReadyToShow();
+    manager.toggleVisibility(); // hide
+    vi.clearAllMocks();
 
-    mockWindow.isVisible.mockReturnValue(true);
+    // Toggle to visible
     manager.toggleVisibility();
 
-    expect(mockWindow.hide).toHaveBeenCalled();
+    expect(mockWindow.setOpacity).toHaveBeenCalledWith(1);
+    expect(mockWindow.setIgnoreMouseEvents).toHaveBeenCalledWith(false);
+    expect(mockWindow.show).not.toHaveBeenCalled();
+    expect(manager.isVisible()).toBe(true);
   });
 
   it("toggleVisibility sends visibility event to renderer", () => {
@@ -151,13 +182,13 @@ describe("createWindowManager", () => {
       preloadPath: "/path/to/preload.cjs",
     });
     manager.createWindow("http://127.0.0.1:8314");
+    triggerReadyToShow();
 
-    mockWindow.isVisible.mockReturnValue(true);
     manager.toggleVisibility();
 
     expect(mockWindow.webContents.send).toHaveBeenCalledWith(
       "pf:visibility-changed",
-      expect.objectContaining({ visible: expect.any(Boolean) }),
+      { visible: false },
     );
   });
 
@@ -168,6 +199,7 @@ describe("createWindowManager", () => {
       preloadPath: "/path/to/preload.cjs",
     });
     manager.createWindow("http://127.0.0.1:8314");
+    triggerReadyToShow();
     vi.clearAllMocks();
 
     manager.setGhostMode(true, 0.4);
@@ -186,12 +218,13 @@ describe("createWindowManager", () => {
       preloadPath: "/path/to/preload.cjs",
     });
     manager.createWindow("http://127.0.0.1:8314");
+    triggerReadyToShow();
     vi.clearAllMocks();
 
     manager.setGhostMode(false);
 
     expect(mockWindow.setIgnoreMouseEvents).toHaveBeenCalledWith(false);
-    expect(mockWindow.setOpacity).toHaveBeenCalledWith(1.0);
+    expect(mockWindow.setOpacity).toHaveBeenCalledWith(1);
     expect(configManager.set).toHaveBeenCalledWith("ghostMode", false);
   });
 

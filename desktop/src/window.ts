@@ -32,6 +32,30 @@ export interface WindowManagerDeps {
 export function createWindowManager(deps: WindowManagerDeps): WindowManager {
   const { configManager, preloadPath } = deps;
   let window: BrowserWindow | null = null;
+  let visible = false;
+
+  /**
+   * Apply the visual state based on visibility and ghost mode.
+   * Visibility is controlled purely via opacity to avoid triggering
+   * AeroSpace's window-added/removed focus logic.
+   */
+  function applyVisualState(): void {
+    if (!window) return;
+    const config = configManager.get();
+    const ghostEnabled = config.preferences.ghostMode;
+    const ghostOpacity = config.preferences.ghostOpacity;
+
+    if (!visible) {
+      window.setOpacity(0);
+      window.setIgnoreMouseEvents(true);
+    } else if (ghostEnabled) {
+      window.setOpacity(ghostOpacity);
+      window.setIgnoreMouseEvents(true, { forward: true });
+    } else {
+      window.setOpacity(1);
+      window.setIgnoreMouseEvents(false);
+    }
+  }
 
   function getAnchorPosition(): { x: number; y: number } {
     const primaryDisplay = screen.getPrimaryDisplay();
@@ -43,7 +67,6 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
 
   function createWindow(serverUrl: string): BrowserWindow {
     const { x, y } = getAnchorPosition();
-    const config = configManager.get();
 
     window = new BrowserWindow({
       x,
@@ -60,6 +83,7 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
       show: false,
       alwaysOnTop: true,
       skipTaskbar: true,
+      type: "panel",
       backgroundColor: "#09090b",
       webPreferences: {
         contextIsolation: true,
@@ -70,13 +94,20 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
 
     window.loadURL(serverUrl);
 
-    // Apply persisted ghost mode on creation
-    if (config.preferences.ghostMode) {
-      applyGhostMode(window, true, config.preferences.ghostOpacity);
-    }
-
+    // Show the window once so it permanently exists in the OS window list.
+    // Visibility is then controlled purely via opacity to avoid triggering
+    // AeroSpace's window-added/removed focus logic.
     window.once("ready-to-show", () => {
-      window?.show();
+      window?.showInactive();
+      visible = true;
+      applyVisualState();
+    });
+
+    // Intercept close to hide via opacity instead of destroying
+    window.on("close", (e) => {
+      e.preventDefault();
+      visible = false;
+      applyVisualState();
     });
 
     window.on("closed", () => {
@@ -90,29 +121,24 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
     if (!window) {
       return;
     }
-    if (window.isVisible()) {
-      window.hide();
-    } else {
-      window.show();
-      window.focus();
-    }
-    window.webContents.send("pf:visibility-changed", {
-      visible: window.isVisible(),
-    });
+    visible = !visible;
+    applyVisualState();
+    window.webContents.send("pf:visibility-changed", { visible });
   }
 
   function setGhostMode(enabled: boolean, opacity?: number): void {
     if (!window) {
       return;
     }
-    const resolvedOpacity =
-      opacity ?? configManager.get().preferences.ghostOpacity;
-    applyGhostMode(window, enabled, resolvedOpacity);
+    if (opacity !== undefined) {
+      configManager.set("ghostOpacity", opacity);
+    }
     configManager.set("ghostMode", enabled);
+    applyVisualState();
   }
 
   function isVisible(): boolean {
-    return window?.isVisible() ?? false;
+    return visible;
   }
 
   function destroy(): void {
@@ -132,23 +158,4 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
     isVisible,
     destroy,
   };
-}
-
-/**
- * Apply or remove ghost mode (translucent + click-through).
- * Uses setIgnoreMouseEvents with forward option so the renderer still
- * receives mouse position for hover effects.
- */
-function applyGhostMode(
-  win: BrowserWindow,
-  enabled: boolean,
-  opacity: number,
-): void {
-  if (enabled) {
-    win.setIgnoreMouseEvents(true, { forward: true });
-    win.setOpacity(opacity);
-  } else {
-    win.setIgnoreMouseEvents(false);
-    win.setOpacity(1.0);
-  }
 }

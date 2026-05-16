@@ -88,7 +88,7 @@ function registerGlobalShortcut(windowManager: { toggleVisibility(): void }): vo
 
   if (!registered) {
     new Notification({
-      title: "Pi Fleet",
+      title: "PiFleet",
       body: "Could not register F5 shortcut. Use the tray menu to show/hide.",
     }).show();
   }
