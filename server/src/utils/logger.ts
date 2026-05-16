@@ -12,7 +12,9 @@ let logFilePath: string | undefined;
 let logDirEnsured = false;
 
 function ensureLogDir(): void {
-	if (logDirEnsured) return;
+	if (logDirEnsured) {
+		return;
+	}
 	const filePath = getLogPath();
 	mkdirSync(dirname(filePath), { recursive: true });
 	logFilePath = filePath;

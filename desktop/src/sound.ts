@@ -28,7 +28,9 @@ export function createSoundManager(deps: SoundManagerDeps): SoundManager {
 
 	function handleStateChange(sessionId: string, activity: string): void {
 		const config = configManager.get();
-		if (!config.preferences.soundEnabled) return;
+		if (!config.preferences.soundEnabled) {
+			return;
+		}
 
 		const previousState = lastState.get(sessionId);
 		lastState.set(sessionId, activity);

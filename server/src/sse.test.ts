@@ -12,7 +12,9 @@ describe("Server Network Behavior", () => {
 	let baseUrl: string;
 
 	afterEach(async () => {
-		if (server) await server.stop();
+		if (server) {
+			await server.stop();
+		}
 	});
 
 	async function startServer(): Promise<void> {

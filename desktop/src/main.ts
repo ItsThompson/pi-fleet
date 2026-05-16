@@ -131,7 +131,9 @@ function wireSessionSoundAlerts(
 	soundManager: ReturnType<typeof createSoundManager>,
 ): void {
 	const instance = server.instance;
-	if (!instance) return;
+	if (!instance) {
+		return;
+	}
 
 	instance.registry.onEvent((event) => {
 		if (event.type === "session:added") {

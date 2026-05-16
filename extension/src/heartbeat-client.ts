@@ -36,7 +36,9 @@ export interface HeartbeatClient {
 }
 
 function computeInterval(failures: number): number {
-	if (failures < FAILURE_THRESHOLD) return HEARTBEAT_INTERVAL_MS;
+	if (failures < FAILURE_THRESHOLD) {
+		return HEARTBEAT_INTERVAL_MS;
+	}
 	const exponent = failures - FAILURE_THRESHOLD + 1;
 	return Math.min(
 		HEARTBEAT_INTERVAL_MS * Math.pow(2, exponent),

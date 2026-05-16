@@ -11,11 +11,15 @@ export function MainArea() {
 	const sessions = useSessionStore((state) => state.sessions);
 	const pods = usePodStore((state) => state.pods);
 
-	if (sessions.size === 0) return <EmptyState />;
+	if (sessions.size === 0) {
+		return <EmptyState />;
+	}
 
 	if (current.view === "pod" && current.id) {
 		const pod = pods.get(current.id);
-		if (pod) return <PodView pod={pod} />;
+		if (pod) {
+			return <PodView pod={pod} />;
+		}
 	}
 
 	if (current.view === "cluster" && current.id) {

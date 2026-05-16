@@ -78,7 +78,9 @@ export function createConfigManager(configPath?: string): ConfigManager {
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	function scheduleSave(): void {
-		if (saveTimeout) clearTimeout(saveTimeout);
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+		}
 		saveTimeout = setTimeout(() => {
 			saveConfig(config, filePath);
 			saveTimeout = null;

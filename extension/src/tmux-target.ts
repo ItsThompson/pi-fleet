@@ -20,7 +20,9 @@ export async function captureTmuxTarget(
 	env: NodeJS.ProcessEnv,
 	exec: Exec,
 ): Promise<TmuxTarget | null> {
-	if (!env.TMUX) return null;
+	if (!env.TMUX) {
+		return null;
+	}
 
 	try {
 		const { stdout, code } = await exec("tmux", [
@@ -28,10 +30,14 @@ export async function captureTmuxTarget(
 			"-p",
 			"#S:#I.#P",
 		]);
-		if (code !== 0) return null;
+		if (code !== 0) {
+			return null;
+		}
 
 		const match = TARGET_RE.exec(stdout.trim());
-		if (!match) return null;
+		if (!match) {
+			return null;
+		}
 
 		return {
 			session: match[1],

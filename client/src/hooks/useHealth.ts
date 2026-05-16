@@ -21,11 +21,15 @@ export function useHealth(): HealthData | null {
 		const baseUrl = getServerUrl();
 		fetch(`${baseUrl}/api/health`)
 			.then((res) => {
-				if (!res.ok) return null;
+				if (!res.ok) {
+					return null;
+				}
 				return res.json();
 			})
 			.then((data) => {
-				if (data) setHealth(data);
+				if (data) {
+					setHealth(data);
+				}
 			})
 			.catch(() => {
 				// Non-critical: ignore errors

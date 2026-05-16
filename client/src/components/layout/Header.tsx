@@ -22,8 +22,9 @@ export function computeVisibleAttentionCount(
 			if (
 				session.activity !== "pending_approval" &&
 				session.activity !== "idle"
-			)
+			) {
 				return count;
+			}
 			const stateChangedAt = activityChangedAt.get(sessionId) ?? "";
 			const record = dismissed.get(sessionId);
 			const isCurrentlyDismissed =
@@ -48,7 +49,9 @@ export function Header({ connectionState }: HeaderProps) {
 
 	// Close panel on outside click
 	useEffect(() => {
-		if (!panelOpen) return;
+		if (!panelOpen) {
+			return;
+		}
 
 		function handleClickOutside(event: MouseEvent) {
 			if (
@@ -130,7 +133,9 @@ function PiWatchNotice() {
 	const health = useHealth();
 	const [dismissed, setDismissed] = useState(false);
 
-	if (dismissed || !health?.piWatchDetected) return null;
+	if (dismissed || !health?.piWatchDetected) {
+		return null;
+	}
 
 	return (
 		<div className="mt-1 rounded bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 text-xs text-orange-300 flex items-start gap-2">

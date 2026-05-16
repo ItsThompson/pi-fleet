@@ -47,7 +47,9 @@ export class PodRegistry {
 		this.listeners.push(listener);
 		return () => {
 			const idx = this.listeners.indexOf(listener);
-			if (idx >= 0) this.listeners.splice(idx, 1);
+			if (idx >= 0) {
+				this.listeners.splice(idx, 1);
+			}
 		};
 	}
 
@@ -113,10 +115,14 @@ export class PodRegistry {
 	handleSessionUpdated(sessionId: string): void {
 		// Find which pod this session belongs to
 		const leadId = this.findLeadForSession(sessionId);
-		if (!leadId) return;
+		if (!leadId) {
+			return;
+		}
 
 		const leadSession = this.sessionRegistry.get(leadId);
-		if (!leadSession) return;
+		if (!leadSession) {
+			return;
+		}
 
 		// Recompute the pod's current state from live session data
 		const freshPod = this.ownershipMap.has(leadId)
@@ -143,18 +149,27 @@ export class PodRegistry {
 	 */
 	private findLeadForSession(sessionId: string): string | undefined {
 		// Check if this session IS a lead (has ownership or is standalone)
-		if (this.sessionRegistry.get(sessionId)) {
-			// Check if it's a child claimed by a parent
-			const session = this.sessionRegistry.get(sessionId);
-			if (session?.subagentId) {
-				for (const [parentId, subagentIds] of this.ownershipMap) {
-					if (subagentIds.includes(session.subagentId)) {
-						return parentId;
-					}
-				}
+		const session = this.sessionRegistry.get(sessionId);
+		if (!session) {
+			return undefined;
+		}
+
+		// Check if it's a child claimed by a parent
+		if (session.subagentId) {
+			const parentId = this.findParentBySubagentId(session.subagentId);
+			if (parentId) {
+				return parentId;
 			}
-			// It's either a standalone session or a parent itself
-			return sessionId;
+		}
+		// It's either a standalone session or a parent itself
+		return sessionId;
+	}
+
+	private findParentBySubagentId(subagentId: string): string | undefined {
+		for (const [parentId, subagentIds] of this.ownershipMap) {
+			if (subagentIds.includes(subagentId)) {
+				return parentId;
+			}
 		}
 		return undefined;
 	}
@@ -166,7 +181,9 @@ export class PodRegistry {
 	 */
 	handleSessionRegistered(sessionId: string): void {
 		const session = this.sessionRegistry.get(sessionId);
-		if (!session?.subagentId) return;
+		if (!session?.subagentId) {
+			return;
+		}
 
 		// Check if any parent has explicitly claimed this subagentId
 		for (const [parentId, subagentIds] of this.ownershipMap) {
@@ -190,7 +207,9 @@ export class PodRegistry {
 					!other.subagentId,
 			);
 
-		if (candidates.length !== 1) return;
+		if (candidates.length !== 1) {
+			return;
+		}
 
 		const inferredParent = candidates[0];
 		const existingIds = this.ownershipMap.get(inferredParent.sessionId) ?? [];
@@ -236,7 +255,9 @@ export class PodRegistry {
 
 		// Case 2: The removed session is a child
 		const session = this.findRemovedSessionSubagentId(sessionId);
-		if (!session) return;
+		if (!session) {
+			return;
+		}
 
 		for (const [parentId] of this.ownershipMap) {
 			const parentSession = this.sessionRegistry.get(parentId);
@@ -263,7 +284,9 @@ export class PodRegistry {
 		// Build multi-member pods from ownership reports
 		this.ownershipMap.forEach((subagentIds, parentId) => {
 			const parentSession = this.sessionRegistry.get(parentId);
-			if (!parentSession) return;
+			if (!parentSession) {
+				return;
+			}
 
 			claimedSessionIds.add(parentId);
 			const memberSessions: RegisteredSession[] = [parentSession];
@@ -284,8 +307,12 @@ export class PodRegistry {
 		// shares the same cwd (avoids ambiguity with multiple candidates).
 		const inferredGroups = new Map<string, RegisteredSession[]>();
 		allSessions.forEach((session) => {
-			if (claimedSessionIds.has(session.sessionId)) return;
-			if (!session.subagentId) return;
+			if (claimedSessionIds.has(session.sessionId)) {
+				return;
+			}
+			if (!session.subagentId) {
+				return;
+			}
 
 			const candidates = allSessions.filter(
 				(other) =>
@@ -294,7 +321,9 @@ export class PodRegistry {
 					!other.subagentId &&
 					!claimedSessionIds.has(other.sessionId),
 			);
-			if (candidates.length !== 1) return;
+			if (candidates.length !== 1) {
+				return;
+			}
 
 			const parent = candidates[0];
 			claimedSessionIds.add(session.sessionId);
@@ -357,7 +386,9 @@ export class PodRegistry {
 		// and emit updates for any that have changed membership.
 		for (const [parentId, subagentIds] of this.ownershipMap) {
 			const parentSession = this.sessionRegistry.get(parentId);
-			if (!parentSession) continue;
+			if (!parentSession) {
+				continue;
+			}
 
 			// If any claimed subagentId no longer resolves, this pod was affected
 			const hasUnresolved = subagentIds.some(
@@ -409,7 +440,9 @@ export class PodRegistry {
 	}
 
 	private computeDisplayName(session: RegisteredSession): string {
-		if (session.agentName) return session.agentName;
+		if (session.agentName) {
+			return session.agentName;
+		}
 		// Fall back to directory basename of cwd
 		const parts = session.cwd.split("/");
 		return parts[parts.length - 1] || session.cwd;

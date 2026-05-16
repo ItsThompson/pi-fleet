@@ -43,7 +43,9 @@ function triggerReadyToShow(): void {
 	const call = mockWindow.once.mock.calls.find(
 		([event]: [string]) => event === "ready-to-show",
 	);
-	if (call) call[1]();
+	if (call) {
+		call[1]();
+	}
 }
 
 function buildConfigManager(

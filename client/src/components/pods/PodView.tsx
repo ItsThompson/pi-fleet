@@ -16,7 +16,9 @@ export function PodView({ pod }: PodViewProps) {
 	const memberSessions = pod.memberSessionIds.reduce<RegisteredSession[]>(
 		(acc, id) => {
 			const session = sessions.get(id);
-			if (session) acc.push(session);
+			if (session) {
+				acc.push(session);
+			}
 			return acc;
 		},
 		[],

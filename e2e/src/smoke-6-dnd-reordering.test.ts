@@ -171,7 +171,9 @@ describe("Smoke 6: Drag-and-Drop (Cluster Reassignment + Reorder)", () => {
 
 				while (true) {
 					const { done, value } = await reader.read();
-					if (done) break;
+					if (done) {
+						break;
+					}
 					buffer += decoder.decode(value, { stream: true });
 
 					const frames = buffer.split("\n\n");

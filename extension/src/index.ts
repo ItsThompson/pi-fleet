@@ -27,7 +27,9 @@ const exec: Exec = (cmd, args) =>
 function toContextUsagePayload(
 	usage: ContextUsage | undefined,
 ): ContextUsagePayload | undefined {
-	if (!usage) return undefined;
+	if (!usage) {
+		return undefined;
+	}
 	return {
 		tokens: usage.tokens,
 		contextWindow: usage.contextWindow,
@@ -76,7 +78,9 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 
 			// Gather initial data
 			const model = ctx.model?.name ?? undefined;
-			if (model) dataCollector.onModelSelect(model);
+			if (model) {
+				dataCollector.onModelSelect(model);
+			}
 
 			const thinkingLevel = pi.getThinkingLevel();
 			dataCollector.onThinkingLevelSelect(thinkingLevel);
@@ -107,7 +111,9 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 
 				// Refresh tmux target each heartbeat
 				const freshTmux = await captureTmuxTarget(process.env, exec);
-				if (freshTmux) lastKnownTmuxTarget = freshTmux.target;
+				if (freshTmux) {
+					lastKnownTmuxTarget = freshTmux.target;
+				}
 
 				// Read context usage at heartbeat time
 				const currentUsage = toContextUsagePayload(
@@ -138,7 +144,9 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 	pi.on("session_shutdown", async () => {
 		try {
 			client.stopHeartbeats();
-			if (sessionId) await client.unregister(sessionId);
+			if (sessionId) {
+				await client.unregister(sessionId);
+			}
 		} catch (err) {
 			console.error(LOG_PREFIX, "session_shutdown error:", err);
 		}

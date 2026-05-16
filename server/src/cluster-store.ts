@@ -72,7 +72,9 @@ function cleanupOrphanAssignments(config: ClusterConfig): boolean {
 		([, clusterId]) => !clusterIds.has(clusterId),
 	);
 
-	if (orphans.length === 0) return false;
+	if (orphans.length === 0) {
+		return false;
+	}
 
 	orphans.forEach(([sessionId]) => {
 		delete config.manualAssignments[sessionId];
@@ -100,7 +102,9 @@ export function createClusterStore(deps: ClusterStoreDeps): ClusterStore {
 	}
 
 	function schedulePersist(): void {
-		if (debounceTimer) return; // Already scheduled
+		if (debounceTimer) {
+			return;
+		} // Already scheduled
 		dirty = true;
 		debounceTimer = setTimeout(() => {
 			debounceTimer = undefined;
@@ -109,7 +113,9 @@ export function createClusterStore(deps: ClusterStoreDeps): ClusterStore {
 	}
 
 	function persistNow(): void {
-		if (!dirty) return;
+		if (!dirty) {
+			return;
+		}
 		dirty = false;
 
 		try {
@@ -164,11 +170,16 @@ export function createClusterStore(deps: ClusterStoreDeps): ClusterStore {
 			updates: Partial<Pick<ClusterDefinition, "name" | "directories">>,
 		): ClusterDefinition | undefined {
 			const cluster = config.clusters.find((c) => c.id === id);
-			if (!cluster) return undefined;
+			if (!cluster) {
+				return undefined;
+			}
 
-			if (updates.name !== undefined) cluster.name = updates.name;
-			if (updates.directories !== undefined)
+			if (updates.name !== undefined) {
+				cluster.name = updates.name;
+			}
+			if (updates.directories !== undefined) {
 				cluster.directories = updates.directories;
+			}
 
 			schedulePersist();
 			onChange();
@@ -177,7 +188,9 @@ export function createClusterStore(deps: ClusterStoreDeps): ClusterStore {
 
 		deleteCluster(id: string): boolean {
 			const index = config.clusters.findIndex((c) => c.id === id);
-			if (index === -1) return false;
+			if (index === -1) {
+				return false;
+			}
 
 			config.clusters.splice(index, 1);
 

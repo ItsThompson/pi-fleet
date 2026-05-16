@@ -68,7 +68,9 @@ export function createActivityTracker(
 
 	function handleEvent(event: ActivityEvent): void {
 		const nextState = TRANSITIONS[current]?.[event];
-		if (!nextState) return; // Invalid transition: ignore silently
+		if (!nextState) {
+			return;
+		} // Invalid transition: ignore silently
 
 		current = nextState;
 		lastEventTime = now();

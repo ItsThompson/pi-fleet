@@ -40,7 +40,9 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
 	 * AeroSpace's window-added/removed focus logic.
 	 */
 	function applyVisualState(): void {
-		if (!window) return;
+		if (!window) {
+			return;
+		}
 		const config = configManager.get();
 		const ghostEnabled = config.preferences.ghostMode;
 		const ghostOpacity = config.preferences.ghostOpacity;

@@ -47,7 +47,9 @@ export const useNotificationDismissStore = create<NotificationDismissStore>(
 		isDismissed: (sessionId, currentStateChangedAt) => {
 			const { dismissed } = get();
 			const record = dismissed.get(sessionId);
-			if (!record) return false;
+			if (!record) {
+				return false;
+			}
 			// Session is still dismissed if its current state timestamp hasn't advanced
 			return currentStateChangedAt <= record.dismissedStateChangedAt;
 		},

@@ -74,7 +74,9 @@ export function createSSEConnection(
 	}
 
 	function connect(): void {
-		if (closed) return;
+		if (closed) {
+			return;
+		}
 
 		// Idempotent: close existing connection first
 		cleanup();
@@ -89,12 +91,16 @@ export function createSSEConnection(
 		});
 
 		es.onopen = () => {
-			if (closed || es !== eventSource) return;
+			if (closed || es !== eventSource) {
+				return;
+			}
 			setState({ connected: true, reconnecting: false, attemptCount: 0 });
 		};
 
 		es.onerror = () => {
-			if (closed || es !== eventSource) return;
+			if (closed || es !== eventSource) {
+				return;
+			}
 
 			es.close();
 			eventSource = null;
@@ -112,7 +118,9 @@ export function createSSEConnection(
 
 		config.eventTypes.forEach((type) => {
 			es.addEventListener(type, (event: MessageEvent) => {
-				if (closed || es !== eventSource) return;
+				if (closed || es !== eventSource) {
+					return;
+				}
 				config.onEvent(type, event.data);
 			});
 		});

@@ -38,7 +38,9 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
 
 	async function handleSubmit(event: React.FormEvent): Promise<void> {
 		event.preventDefault();
-		if (!name.trim()) return;
+		if (!name.trim()) {
+			return;
+		}
 
 		setSubmitting(true);
 		setError(null);
@@ -70,6 +72,13 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
 		}
 
 		onClose();
+	}
+
+	function getSubmitLabel(): string {
+		if (submitting) {
+			return "Saving...";
+		}
+		return isEditing ? "Save Changes" : "Create";
 	}
 
 	return (
@@ -158,7 +167,7 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
 							Cancel
 						</Button>
 						<Button type="submit" disabled={!name.trim() || submitting}>
-							{submitting ? "Saving..." : isEditing ? "Save Changes" : "Create"}
+							{getSubmitLabel()}
 						</Button>
 					</div>
 				</form>

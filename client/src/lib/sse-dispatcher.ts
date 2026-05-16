@@ -99,7 +99,9 @@ export function createSSEDispatcher(deps: DispatchDeps): {
 	dispatch: (eventType: string, rawData: string) => void;
 } {
 	function dispatch(eventType: string, rawData: string): void {
-		if (eventType === "heartbeat") return;
+		if (eventType === "heartbeat") {
+			return;
+		}
 
 		let parsed: unknown;
 		try {

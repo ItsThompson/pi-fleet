@@ -356,12 +356,21 @@ describe("openTerminal (full flow)", () => {
 		const exec: ExecFn = async (cmd, args) => {
 			calls.push([cmd, ...args]);
 			const key = `${cmd} ${args.join(" ")}`;
-			if (key.includes("display-message")) return { stdout: "", stderr: "" };
-			if (key.includes("list-clients"))
+			if (key.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (key.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
-			if (key.includes("switch-client")) return { stdout: "", stderr: "" };
-			if (key.includes("ps")) return { stdout: "iTerm2\n", stderr: "" };
-			if (key.includes("osascript")) return { stdout: "", stderr: "" };
+			}
+			if (key.includes("switch-client")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (key.includes("ps")) {
+				return { stdout: "iTerm2\n", stderr: "" };
+			}
+			if (key.includes("osascript")) {
+				return { stdout: "", stderr: "" };
+			}
 			return { stdout: "", stderr: "" };
 		};
 
@@ -403,8 +412,12 @@ describe("openTerminal (full flow)", () => {
 
 	it("returns no-server when list-clients throws", async () => {
 		const exec: ExecFn = async (cmd, args) => {
-			if (args.includes("display-message")) return { stdout: "", stderr: "" };
-			if (args.includes("list-clients")) throw new Error("no server");
+			if (args.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (args.includes("list-clients")) {
+				throw new Error("no server");
+			}
 			return { stdout: "", stderr: "" };
 		};
 
@@ -420,8 +433,12 @@ describe("openTerminal (full flow)", () => {
 
 	it("returns no-client when zero clients attached", async () => {
 		const exec: ExecFn = async (cmd, args) => {
-			if (args.includes("display-message")) return { stdout: "", stderr: "" };
-			if (args.includes("list-clients")) return { stdout: "", stderr: "" };
+			if (args.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (args.includes("list-clients")) {
+				return { stdout: "", stderr: "" };
+			}
 			return { stdout: "", stderr: "" };
 		};
 
@@ -437,7 +454,9 @@ describe("openTerminal (full flow)", () => {
 
 	it("returns multi-client when multiple clients attached", async () => {
 		const exec: ExecFn = async (cmd, args) => {
-			if (args.includes("display-message")) return { stdout: "", stderr: "" };
+			if (args.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
 			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n/dev/ttys002\n", stderr: "" };
 			}
@@ -456,9 +475,12 @@ describe("openTerminal (full flow)", () => {
 
 	it("returns switch-failed when switch-client errors", async () => {
 		const exec: ExecFn = async (cmd, args) => {
-			if (args.includes("display-message")) return { stdout: "", stderr: "" };
-			if (args.includes("list-clients"))
+			if (args.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
+			}
 			if (args.includes("switch-client")) {
 				const error = new Error("switch failed") as Error & { stderr: string };
 				error.stderr = "can't find client";
@@ -479,12 +501,21 @@ describe("openTerminal (full flow)", () => {
 
 	it("succeeds even when terminal activation fails (non-fatal)", async () => {
 		const exec: ExecFn = async (cmd, args) => {
-			if (args.includes("display-message")) return { stdout: "", stderr: "" };
-			if (args.includes("list-clients"))
+			if (args.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
-			if (args.includes("switch-client")) return { stdout: "", stderr: "" };
-			if (cmd === "ps") return { stdout: "iTerm2\n", stderr: "" };
-			if (cmd === "osascript") throw new Error("activation failed");
+			}
+			if (args.includes("switch-client")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (cmd === "ps") {
+				return { stdout: "iTerm2\n", stderr: "" };
+			}
+			if (cmd === "osascript") {
+				throw new Error("activation failed");
+			}
 			return { stdout: "", stderr: "" };
 		};
 
@@ -501,11 +532,18 @@ describe("openTerminal (full flow)", () => {
 
 	it("succeeds silently when no terminal app detected", async () => {
 		const exec: ExecFn = async (cmd, args) => {
-			if (args.includes("display-message")) return { stdout: "", stderr: "" };
-			if (args.includes("list-clients"))
+			if (args.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
-			if (args.includes("switch-client")) return { stdout: "", stderr: "" };
-			if (cmd === "ps") return { stdout: "/usr/bin/zsh\n", stderr: "" };
+			}
+			if (args.includes("switch-client")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (cmd === "ps") {
+				return { stdout: "/usr/bin/zsh\n", stderr: "" };
+			}
 			return { stdout: "", stderr: "" };
 		};
 

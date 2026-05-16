@@ -33,7 +33,9 @@ export function parseTmuxTarget(raw: string): TmuxTarget | null {
 	// Window can be non-numeric (e.g., "dev")
 	// Pane is always numeric
 	const match = raw.match(/^(.+):(.+)\.(\d+)$/);
-	if (!match) return null;
+	if (!match) {
+		return null;
+	}
 	return { session: match[1], window: match[2], pane: match[3] };
 }
 
@@ -137,7 +139,9 @@ export async function activateTerminal(
 	exec: ExecFn,
 ): Promise<boolean> {
 	// Double-check: only activate apps from our validated allowlist
-	if (!TERMINAL_APP_ALLOWLIST.includes(app)) return false;
+	if (!TERMINAL_APP_ALLOWLIST.includes(app)) {
+		return false;
+	}
 
 	try {
 		await exec("osascript", ["-e", `tell application "${app}" to activate`]);

@@ -42,7 +42,9 @@ export function createTrayManager(deps: TrayManagerDeps): TrayManager {
 	}
 
 	function updateMenu(): void {
-		if (!tray) return;
+		if (!tray) {
+			return;
+		}
 		const config = configManager.get();
 
 		const contextMenu = Menu.buildFromTemplate([

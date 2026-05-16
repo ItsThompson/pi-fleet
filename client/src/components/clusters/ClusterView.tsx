@@ -56,7 +56,9 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
 	const viewSessions = clusterPods.reduce<RegisteredSession[]>((acc, pod) => {
 		pod.memberSessionIds.forEach((id) => {
 			const session = sessions.get(id);
-			if (session) acc.push(session);
+			if (session) {
+				acc.push(session);
+			}
 		});
 		return acc;
 	}, []);
@@ -65,11 +67,15 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
 	const manualCount = 0; // This would require server-side info; kept for display
 
 	async function handleDelete(): Promise<void> {
-		if (isUnclustered) return;
+		if (isUnclustered) {
+			return;
+		}
 		const confirmed = window.confirm(
 			`Delete cluster "${cluster!.name}"? Pods will move to Unclustered.`,
 		);
-		if (!confirmed) return;
+		if (!confirmed) {
+			return;
+		}
 		const result = await deleteCluster(getServerUrl(), cluster!.id);
 		if (!result.ok) {
 			console.error("Failed to delete cluster:", result.error);

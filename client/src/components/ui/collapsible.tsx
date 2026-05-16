@@ -74,7 +74,9 @@ function CollapsibleContent({
 }: CollapsibleContentProps) {
 	const { open } = useCollapsible();
 
-	if (!open) return null;
+	if (!open) {
+		return null;
+	}
 
 	return (
 		<div className={cn("overflow-hidden", className)} {...props}>

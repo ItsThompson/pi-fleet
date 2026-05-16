@@ -58,7 +58,9 @@ export function FilterBadges({ sessions }: FilterBadgesProps) {
 				const count = sessions.filter(
 					(s) => s.activity === config.status,
 				).length;
-				if (count === 0) return null;
+				if (count === 0) {
+					return null;
+				}
 
 				const isActive = activeFilters.has(config.status);
 

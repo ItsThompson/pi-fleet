@@ -79,7 +79,9 @@ export class SessionRegistry {
 
 	heartbeat(body: HeartbeatBody): RegisteredSession | undefined {
 		const existing = this.sessions.get(body.sessionId);
-		if (!existing) return undefined;
+		if (!existing) {
+			return undefined;
+		}
 
 		const now = new Date(this.now()).toISOString();
 
@@ -87,16 +89,27 @@ export class SessionRegistry {
 		existing.lastSeen = now;
 		existing.lastEventTime = body.lastEventTime;
 
-		if (body.tmuxTarget !== undefined) existing.tmuxTarget = body.tmuxTarget;
-		if (body.agentName !== undefined) existing.agentName = body.agentName;
-		if (body.model !== undefined) existing.model = body.model;
-		if (body.contextUsage !== undefined)
+		if (body.tmuxTarget !== undefined) {
+			existing.tmuxTarget = body.tmuxTarget;
+		}
+		if (body.agentName !== undefined) {
+			existing.agentName = body.agentName;
+		}
+		if (body.model !== undefined) {
+			existing.model = body.model;
+		}
+		if (body.contextUsage !== undefined) {
 			existing.contextUsage = body.contextUsage;
-		if (body.turnCount !== undefined) existing.turnCount = body.turnCount;
-		if (body.thinkingLevel !== undefined)
+		}
+		if (body.turnCount !== undefined) {
+			existing.turnCount = body.turnCount;
+		}
+		if (body.thinkingLevel !== undefined) {
 			existing.thinkingLevel = body.thinkingLevel;
-		if (body.lastToolName !== undefined)
+		}
+		if (body.lastToolName !== undefined) {
 			existing.lastToolName = body.lastToolName;
+		}
 
 		this.emit({ type: "session:updated", session: existing });
 		return existing;

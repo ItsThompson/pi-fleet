@@ -53,12 +53,21 @@ describe("IPC open-session flow (integration)", () => {
 		// Now simulate the terminal opener with the resolved target
 		const notifications: Array<{ title: string; body: string }> = [];
 		const exec: ExecFn = async (cmd, args) => {
-			if (args.includes("display-message")) return { stdout: "", stderr: "" };
-			if (args.includes("list-clients"))
+			if (args.includes("display-message")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
-			if (args.includes("switch-client")) return { stdout: "", stderr: "" };
-			if (cmd === "ps") return { stdout: "iTerm2\n", stderr: "" };
-			if (cmd === "osascript") return { stdout: "", stderr: "" };
+			}
+			if (args.includes("switch-client")) {
+				return { stdout: "", stderr: "" };
+			}
+			if (cmd === "ps") {
+				return { stdout: "iTerm2\n", stderr: "" };
+			}
+			if (cmd === "osascript") {
+				return { stdout: "", stderr: "" };
+			}
 			return { stdout: "", stderr: "" };
 		};
 		const notify: NotifyFn = (title, body) =>

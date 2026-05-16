@@ -42,17 +42,23 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
 
 	passesFilter: (session) => {
 		const { activeFilters } = get();
-		if (activeFilters.size === 0) return true;
+		if (activeFilters.size === 0) {
+			return true;
+		}
 		return activeFilters.has(session.activity);
 	},
 
 	podPassesFilter: (pod, sessions) => {
 		const { activeFilters } = get();
-		if (activeFilters.size === 0) return true;
+		if (activeFilters.size === 0) {
+			return true;
+		}
 
 		return pod.memberSessionIds.some((id) => {
 			const session = sessions.get(id);
-			if (!session) return false;
+			if (!session) {
+				return false;
+			}
 			return activeFilters.has(session.activity);
 		});
 	},
