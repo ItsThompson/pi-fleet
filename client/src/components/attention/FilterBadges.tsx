@@ -18,26 +18,26 @@ const FILTER_CONFIGS: FilterBadgeConfig[] = [
   {
     status: "pending_approval",
     label: "Pending Approval",
-    activeColor: "bg-red-500/20 border-red-500 text-red-400",
-    dotColor: "bg-red-500",
+    activeColor: "bg-activity-pending-approval/20 border-activity-pending-approval text-activity-pending-approval",
+    dotColor: "bg-activity-pending-approval",
   },
   {
     status: "idle",
     label: "Idle",
-    activeColor: "bg-yellow-500/20 border-yellow-500 text-yellow-400",
-    dotColor: "bg-yellow-500",
+    activeColor: "bg-activity-idle/20 border-activity-idle text-activity-idle",
+    dotColor: "bg-activity-idle",
   },
   {
     status: "running_tool",
     label: "Running Tool",
-    activeColor: "bg-green-500/20 border-green-500 text-green-400",
-    dotColor: "bg-green-500",
+    activeColor: "bg-activity-running-tool/20 border-activity-running-tool text-activity-running-tool",
+    dotColor: "bg-activity-running-tool",
   },
   {
     status: "processing",
     label: "Processing",
-    activeColor: "bg-blue-500/20 border-blue-500 text-blue-400",
-    dotColor: "bg-blue-500",
+    activeColor: "bg-activity-processing/20 border-activity-processing text-activity-processing",
+    dotColor: "bg-activity-processing",
   },
 ];
 
