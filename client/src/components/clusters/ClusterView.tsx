@@ -24,12 +24,15 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
   const cluster = useClusterStore((state) =>
     state.clusters.find((c) => c.id === clusterId),
   );
+  const unclustered = useClusterStore((state) => state.unclustered);
   const deleteCluster = useClusterStore((state) => state.deleteCluster);
   const podPassesFilter = useFilterStore((state) => state.podPassesFilter);
   const activeFilters = useFilterStore((state) => state.activeFilters);
   const [showEditForm, setShowEditForm] = useState(false);
 
-  if (!cluster) {
+  const isUnclustered = clusterId === "unclustered";
+
+  if (!isUnclustered && !cluster) {
     return (
       <div className="p-4 text-muted-foreground">
         Cluster not found.
@@ -37,7 +40,23 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
     );
   }
 
-  const podIdSet = new Set(cluster.podIds);
+  // For unclustered: include both server-assigned unclustered pods AND orphans
+  // (pods not referenced by any cluster or the unclustered list)
+  const allPods = Array.from(pods.values());
+  let podIdSet: Set<string>;
+  if (isUnclustered) {
+    const clusters = useClusterStore.getState().clusters;
+    const assignedPodIds = new Set([
+      ...clusters.flatMap((c) => c.podIds),
+      ...unclustered.podIds,
+    ]);
+    const orphanIds = allPods
+      .filter((pod) => !assignedPodIds.has(pod.leadSessionId))
+      .map((pod) => pod.leadSessionId);
+    podIdSet = new Set([...unclustered.podIds, ...orphanIds]);
+  } else {
+    podIdSet = new Set(cluster!.podIds);
+  }
   const clusterPods = Array.from(pods.values()).filter((pod) =>
     podIdSet.has(pod.leadSessionId),
   );
@@ -63,6 +82,7 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
   const manualCount = 0; // This would require server-side info; kept for display
 
   async function handleDelete(): Promise<void> {
+    if (isUnclustered) return;
     const confirmed = window.confirm(
       `Delete cluster "${cluster!.name}"? Pods will move to Unclustered.`,
     );
@@ -72,12 +92,16 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
 
   return (
     <ScrollArea className="h-full p-4">
-      <ClusterHeader
-        cluster={cluster}
-        manualCount={manualCount}
-        onEdit={() => setShowEditForm(true)}
-        onDelete={handleDelete}
-      />
+      {isUnclustered ? (
+        <h2 className="text-lg font-semibold mb-4">Unclustered</h2>
+      ) : (
+        <ClusterHeader
+          cluster={cluster!}
+          manualCount={manualCount}
+          onEdit={() => setShowEditForm(true)}
+          onDelete={handleDelete}
+        />
+      )}
 
       <div className="mb-4">
         <FilterBadges sessions={viewSessions} />
@@ -121,9 +145,9 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
         </p>
       )}
 
-      {showEditForm && (
+      {showEditForm && !isUnclustered && (
         <ClusterForm
-          cluster={cluster}
+          cluster={cluster!}
           onClose={() => setShowEditForm(false)}
         />
       )}

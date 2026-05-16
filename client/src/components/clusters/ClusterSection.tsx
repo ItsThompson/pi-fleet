@@ -19,25 +19,28 @@ export function ClusterSection({ name, clusterId, pods, attentionCount }: Cluste
   const [open, setOpen] = useState(true);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
 
+  function handleNavigate(event: React.MouseEvent): void {
+    event.stopPropagation();
+    navigateTo("cluster", clusterId ?? "unclustered");
+  }
+
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="mb-1">
       <div className="flex items-center">
-        <CollapsibleTrigger className="flex-1 flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors">
+        <CollapsibleTrigger className="shrink-0 p-1.5 rounded-md hover:bg-accent/50 transition-colors">
           <ChevronRight
             className={cn(
-              "h-4 w-4 shrink-0 transition-transform",
+              "h-4 w-4 transition-transform",
               open && "rotate-90",
             )}
           />
-          <span
-            className="text-sm font-medium truncate cursor-pointer"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (clusterId) {
-                navigateTo("cluster", clusterId);
-              }
-            }}
-          >
+        </CollapsibleTrigger>
+        <button
+          type="button"
+          className="flex-1 flex items-center gap-1 px-1.5 py-1.5 rounded-md hover:bg-accent/50 transition-colors text-left"
+          onClick={handleNavigate}
+        >
+          <span className="text-sm font-medium truncate">
             {name}
           </span>
           {attentionCount > 0 && (
@@ -45,7 +48,7 @@ export function ClusterSection({ name, clusterId, pods, attentionCount }: Cluste
               {attentionCount > 9 ? "9+" : attentionCount}
             </Badge>
           )}
-        </CollapsibleTrigger>
+        </button>
       </div>
       <CollapsibleContent className="pl-4 mt-0.5">
         {pods.map((pod) => (
