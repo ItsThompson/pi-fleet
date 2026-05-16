@@ -1,4 +1,4 @@
-import type { RegisteredSession, ActivityStatus } from "@pi-fleet/shared";
+import type { RegisteredSession } from "@pi-fleet/shared";
 import { isAttentionState } from "@pi-fleet/shared";
 
 // Re-export for convenience: consumers have one import source for all attention logic
