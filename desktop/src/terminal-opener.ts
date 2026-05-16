@@ -50,16 +50,16 @@ export async function resolveSession(
 }
 
 /**
- * List tmux clients scoped to the target session.
+ * List all tmux clients.
+ * Not scoped to a session because switch-client can cross sessions:
+ * the user's terminal may be attached to session A while the target
+ * pane lives in session B.
  */
 export async function listClients(
-	session: string,
 	exec: ExecFn,
 ): Promise<{ count: number; first: string | null }> {
 	const { stdout } = await exec("tmux", [
 		"list-clients",
-		"-t",
-		session,
 		"-F",
 		"#{client_name}",
 	]);
@@ -150,10 +150,11 @@ export async function openTerminal(
 		return { ok: false, reason: "pane-not-found" };
 	}
 
-	// Step 2: List clients scoped to session
+	// Step 2: List all tmux clients (not scoped to session, since
+	// switch-client can cross sessions)
 	let clientResult: { count: number; first: string | null };
 	try {
-		clientResult = await listClients(session, exec);
+		clientResult = await listClients(exec);
 	} catch {
 		notify("Pi Fleet", "tmux server not running");
 		return { ok: false, reason: "no-server" };
@@ -161,15 +162,12 @@ export async function openTerminal(
 
 	// Step 3: Classify client state
 	if (clientResult.count === 0) {
-		notify("Pi Fleet", `No terminal attached to session '${session}'`);
+		notify("Pi Fleet", "No terminal attached to tmux");
 		return { ok: false, reason: "no-client" };
 	}
 
 	if (clientResult.count > 1) {
-		notify(
-			"Pi Fleet",
-			`Multiple terminals on session '${session}'; detach extras`,
-		);
+		notify("Pi Fleet", "Multiple terminals attached to tmux; detach extras");
 		return { ok: false, reason: "multi-client" };
 	}
 

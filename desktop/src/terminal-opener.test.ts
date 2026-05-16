@@ -120,13 +120,13 @@ describe("listClients", () => {
 			"list-clients": { stdout: "/dev/ttys001\n" },
 		});
 
-		const result = await listClients("main", exec);
+		const result = await listClients(exec);
 		expect(result).toEqual({ count: 1, first: "/dev/ttys001" });
 	});
 
 	it("returns zero clients for empty output", async () => {
 		const exec = buildExec({ "list-clients": { stdout: "" } });
-		const result = await listClients("main", exec);
+		const result = await listClients(exec);
 		expect(result).toEqual({ count: 0, first: null });
 	});
 
@@ -135,27 +135,20 @@ describe("listClients", () => {
 			"list-clients": { stdout: "/dev/ttys001\n/dev/ttys002\n" },
 		});
 
-		const result = await listClients("main", exec);
+		const result = await listClients(exec);
 		expect(result).toEqual({ count: 2, first: "/dev/ttys001" });
 	});
 
-	it("scopes to session with -t flag", async () => {
+	it("lists all clients without session scoping", async () => {
 		const calls: string[][] = [];
 		const exec: ExecFn = async (cmd, args) => {
 			calls.push([cmd, ...args]);
 			return { stdout: "/dev/ttys001\n", stderr: "" };
 		};
 
-		await listClients("my-session", exec);
+		await listClients(exec);
 
-		expect(calls[0]).toEqual([
-			"tmux",
-			"list-clients",
-			"-t",
-			"my-session",
-			"-F",
-			"#{client_name}",
-		]);
+		expect(calls[0]).toEqual(["tmux", "list-clients", "-F", "#{client_name}"]);
 	});
 });
 
