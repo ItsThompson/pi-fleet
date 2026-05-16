@@ -54,16 +54,16 @@ describe("filter-store", () => {
       expect(activeFilters.size).toBe(2);
     });
 
-    it("toggles both processing and running_tool as a group (Working)", () => {
+    it("toggles processing independently from running_tool", () => {
       useFilterStore.getState().toggleFilter("processing");
 
       const { activeFilters } = useFilterStore.getState();
       expect(activeFilters.has("processing")).toBe(true);
-      expect(activeFilters.has("running_tool")).toBe(true);
-      expect(activeFilters.size).toBe(2);
+      expect(activeFilters.has("running_tool")).toBe(false);
+      expect(activeFilters.size).toBe(1);
     });
 
-    it("removes both processing and running_tool when toggling off Working", () => {
+    it("removes processing independently when toggling off", () => {
       useFilterStore.setState({
         activeFilters: new Set(["processing", "running_tool"]),
       });
@@ -71,16 +71,16 @@ describe("filter-store", () => {
 
       const { activeFilters } = useFilterStore.getState();
       expect(activeFilters.has("processing")).toBe(false);
-      expect(activeFilters.has("running_tool")).toBe(false);
-      expect(activeFilters.size).toBe(0);
+      expect(activeFilters.has("running_tool")).toBe(true);
+      expect(activeFilters.size).toBe(1);
     });
 
-    it("toggles Working group via running_tool trigger as well", () => {
+    it("toggles running_tool independently from processing", () => {
       useFilterStore.getState().toggleFilter("running_tool");
 
       const { activeFilters } = useFilterStore.getState();
-      expect(activeFilters.has("processing")).toBe(true);
       expect(activeFilters.has("running_tool")).toBe(true);
+      expect(activeFilters.has("processing")).toBe(false);
     });
   });
 

@@ -33,11 +33,11 @@ describe("FilterBadges", () => {
     render(<FilterBadges sessions={sessions} />);
 
     expect(screen.getByText("Idle (2)")).toBeInTheDocument();
-    expect(screen.getByText("Working (1)")).toBeInTheDocument();
-    expect(screen.queryByText(/Needs Approval/)).not.toBeInTheDocument();
+    expect(screen.getByText("Processing (1)")).toBeInTheDocument();
+    expect(screen.queryByText(/Pending Approval/)).not.toBeInTheDocument();
   });
 
-  it("Working badge combines processing and running_tool counts", () => {
+  it("renders separate badges for processing and running_tool", () => {
     const sessions = [
       buildSession({ sessionId: "s1", activity: "processing" }),
       buildSession({ sessionId: "s2", activity: "running_tool" }),
@@ -46,13 +46,11 @@ describe("FilterBadges", () => {
 
     render(<FilterBadges sessions={sessions} />);
 
-    // Single "Working" badge with combined count
-    expect(screen.getByText("Working (3)")).toBeInTheDocument();
-    // No separate "Running Tool" badge
-    expect(screen.queryByText(/Running Tool/)).not.toBeInTheDocument();
+    expect(screen.getByText("Processing (1)")).toBeInTheDocument();
+    expect(screen.getByText("Running Tool (2)")).toBeInTheDocument();
   });
 
-  it("clicking Working badge toggles both processing and running_tool", () => {
+  it("clicking Processing badge toggles only processing filter", () => {
     const sessions = [
       buildSession({ sessionId: "s1", activity: "processing" }),
       buildSession({ sessionId: "s2", activity: "running_tool" }),
@@ -60,12 +58,28 @@ describe("FilterBadges", () => {
 
     render(<FilterBadges sessions={sessions} />);
 
-    const badge = screen.getByRole("button", { name: /Filter Working/i });
+    const badge = screen.getByRole("button", { name: /Filter Processing/i });
     fireEvent.click(badge);
 
     const { activeFilters } = useFilterStore.getState();
     expect(activeFilters.has("processing")).toBe(true);
+    expect(activeFilters.has("running_tool")).toBe(false);
+  });
+
+  it("clicking Running Tool badge toggles only running_tool filter", () => {
+    const sessions = [
+      buildSession({ sessionId: "s1", activity: "processing" }),
+      buildSession({ sessionId: "s2", activity: "running_tool" }),
+    ];
+
+    render(<FilterBadges sessions={sessions} />);
+
+    const badge = screen.getByRole("button", { name: /Filter Running Tool/i });
+    fireEvent.click(badge);
+
+    const { activeFilters } = useFilterStore.getState();
     expect(activeFilters.has("running_tool")).toBe(true);
+    expect(activeFilters.has("processing")).toBe(false);
   });
 
   it("clicking a badge toggles the filter", () => {
