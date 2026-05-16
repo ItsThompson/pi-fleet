@@ -8,100 +8,111 @@ import { useNavigationStore } from "@/stores/navigation-store";
 import type { Pod, RegisteredSession } from "@pi-fleet/shared";
 
 function buildPod(overrides?: Partial<Pod>): Pod {
-  return {
-    leadSessionId: "lead-1",
-    memberSessionIds: ["lead-1"],
-    displayName: "my-project",
-    state: "processing",
-    attentionCount: 0,
-    ...overrides,
-  };
+	return {
+		leadSessionId: "lead-1",
+		memberSessionIds: ["lead-1"],
+		displayName: "my-project",
+		state: "processing",
+		attentionCount: 0,
+		...overrides,
+	};
 }
 
-function buildSession(overrides?: Partial<RegisteredSession>): RegisteredSession {
-  return {
-    sessionId: "session-1",
-    pid: 1234,
-    cwd: "/home/user/project",
-    tmuxTarget: "main:1.0",
-    startTime: "2025-01-01T00:00:00Z",
-    activity: "processing",
-    lastSeen: "2025-01-01T00:01:00Z",
-    lastEventTime: "2025-01-01T00:01:00Z",
-    ...overrides,
-  };
+function buildSession(
+	overrides?: Partial<RegisteredSession>,
+): RegisteredSession {
+	return {
+		sessionId: "session-1",
+		pid: 1234,
+		cwd: "/home/user/project",
+		tmuxTarget: "main:1.0",
+		startTime: "2025-01-01T00:00:00Z",
+		activity: "processing",
+		lastSeen: "2025-01-01T00:01:00Z",
+		lastEventTime: "2025-01-01T00:01:00Z",
+		...overrides,
+	};
 }
 
 describe("Sidebar", () => {
-  beforeEach(() => {
-    usePodStore.setState({ pods: new Map() });
-    useSessionStore.setState({ sessions: new Map(), activityChangedAt: new Map() });
-    useNavigationStore.setState({ current: { view: "cluster", id: undefined } });
-  });
+	beforeEach(() => {
+		usePodStore.setState({ pods: new Map() });
+		useSessionStore.setState({
+			sessions: new Map(),
+			activityChangedAt: new Map(),
+		});
+		useNavigationStore.setState({
+			current: { view: "cluster", id: undefined },
+		});
+	});
 
-  it("renders Unclustered section", () => {
-    render(<Sidebar />);
-    expect(screen.getByText("Unclustered")).toBeInTheDocument();
-  });
+	it("renders Unclustered section", () => {
+		render(<Sidebar />);
+		expect(screen.getByText("Unclustered")).toBeInTheDocument();
+	});
 
-  it("shows pods in the sidebar", () => {
-    const pods = new Map([
-      ["lead-1", buildPod({ leadSessionId: "lead-1", displayName: "api-service" })],
-      ["lead-2", buildPod({ leadSessionId: "lead-2", displayName: "frontend" })],
-    ]);
-    usePodStore.setState({ pods });
+	it("shows pods in the sidebar", () => {
+		const pods = new Map([
+			[
+				"lead-1",
+				buildPod({ leadSessionId: "lead-1", displayName: "api-service" }),
+			],
+			[
+				"lead-2",
+				buildPod({ leadSessionId: "lead-2", displayName: "frontend" }),
+			],
+		]);
+		usePodStore.setState({ pods });
 
-    render(<Sidebar />);
-    expect(screen.getByText("api-service")).toBeInTheDocument();
-    expect(screen.getByText("frontend")).toBeInTheDocument();
-  });
+		render(<Sidebar />);
+		expect(screen.getByText("api-service")).toBeInTheDocument();
+		expect(screen.getByText("frontend")).toBeInTheDocument();
+	});
 
-  it("shows attention badge on pods", () => {
-    const pods = new Map([
-      ["lead-1", buildPod({ attentionCount: 3 })],
-    ]);
-    usePodStore.setState({ pods });
+	it("shows attention badge on pods", () => {
+		const pods = new Map([["lead-1", buildPod({ attentionCount: 3 })]]);
+		usePodStore.setState({ pods });
 
-    render(<Sidebar />);
-    // Badge appears on both cluster section and pod row
-    const badges = screen.getAllByText("3");
-    expect(badges.length).toBe(2);
-  });
+		render(<Sidebar />);
+		// Badge appears on both cluster section and pod row
+		const badges = screen.getAllByText("3");
+		expect(badges.length).toBe(2);
+	});
 
-  it("navigates to pod view on pod row click", async () => {
-    const user = userEvent.setup();
-    const pods = new Map([
-      ["lead-1", buildPod({ leadSessionId: "lead-1", displayName: "my-pod" })],
-    ]);
-    usePodStore.setState({ pods });
+	it("navigates to pod view on pod row click", async () => {
+		const user = userEvent.setup();
+		const pods = new Map([
+			["lead-1", buildPod({ leadSessionId: "lead-1", displayName: "my-pod" })],
+		]);
+		usePodStore.setState({ pods });
 
-    render(<Sidebar />);
-    await user.click(screen.getByText("my-pod"));
+		render(<Sidebar />);
+		await user.click(screen.getByText("my-pod"));
 
-    const { current } = useNavigationStore.getState();
-    expect(current.view).toBe("pod");
-    expect(current.id).toBe("lead-1");
-  });
+		const { current } = useNavigationStore.getState();
+		expect(current.view).toBe("pod");
+		expect(current.id).toBe("lead-1");
+	});
 
-  it("shows 'No pods' when cluster is empty", () => {
-    render(<Sidebar />);
-    expect(screen.getByText("No pods")).toBeInTheDocument();
-  });
+	it("shows 'No pods' when cluster is empty", () => {
+		render(<Sidebar />);
+		expect(screen.getByText("No pods")).toBeInTheDocument();
+	});
 
-  it("cluster section is collapsible", async () => {
-    const user = userEvent.setup();
-    const pods = new Map([
-      ["lead-1", buildPod({ displayName: "collapsible-test" })],
-    ]);
-    usePodStore.setState({ pods });
+	it("cluster section is collapsible", async () => {
+		const user = userEvent.setup();
+		const pods = new Map([
+			["lead-1", buildPod({ displayName: "collapsible-test" })],
+		]);
+		usePodStore.setState({ pods });
 
-    render(<Sidebar />);
-    expect(screen.getByText("collapsible-test")).toBeInTheDocument();
+		render(<Sidebar />);
+		expect(screen.getByText("collapsible-test")).toBeInTheDocument();
 
-    // Click the chevron/trigger to collapse
-    const trigger = screen.getByRole("button", { expanded: true });
-    await user.click(trigger);
+		// Click the chevron/trigger to collapse
+		const trigger = screen.getByRole("button", { expanded: true });
+		await user.click(trigger);
 
-    expect(screen.queryByText("collapsible-test")).not.toBeInTheDocument();
-  });
+		expect(screen.queryByText("collapsible-test")).not.toBeInTheDocument();
+	});
 });

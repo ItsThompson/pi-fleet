@@ -1,17 +1,17 @@
 {
-  "name": "@pi-fleet/e2e",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "devDependencies": {
-    "@pi-fleet/shared": "*",
-    "@pi-fleet/server": "*",
-    "@types/node": "^22.15.3",
-    "typescript": "^5.8.3",
-    "vitest": "^4.0.18"
-  }
+	"name": "@pi-fleet/e2e",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"devDependencies": {
+		"@pi-fleet/shared": "*",
+		"@pi-fleet/server": "*",
+		"@types/node": "^22.15.3",
+		"typescript": "^5.8.3",
+		"vitest": "^4.0.18"
+	}
 }

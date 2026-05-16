@@ -66,6 +66,7 @@ Implement cluster CRUD, directory-based auto-assignment, manual overrides, and p
 ### Changes
 
 **Files created:**
+
 - `server/src/cluster-assignment.ts`: Directory matching logic with tilde expansion, trailing slash normalization, manual override precedence
 - `server/src/cluster-assignment.test.ts`: 17 unit tests covering all assignment scenarios
 - `server/src/cluster-store.ts`: Cluster persistence with CRUD, debounced writes, orphan cleanup, 0600 permissions
@@ -78,6 +79,7 @@ Implement cluster CRUD, directory-based auto-assignment, manual overrides, and p
 - `client/src/components/clusters/ClusterHeader.tsx`: Cluster detail header with directories, manual count, edit/delete buttons
 
 **Files modified:**
+
 - `server/src/server.ts`: Integrated ClusterStore into server factory, added cluster routes, dispose on shutdown
 - `server/src/schemas.ts`: Added Zod schemas for cluster API requests (create, update, reorder, assign)
 - `client/src/hooks/useSSE.ts`: Added cluster SSE event handlers and cluster refetch on reconnect
@@ -92,6 +94,7 @@ Implement cluster CRUD, directory-based auto-assignment, manual overrides, and p
 ### Test Results
 
 Server (150 tests, 11 files):
+
 ```
  Test Files  11 passed (11)
       Tests  150 passed (150)
@@ -99,6 +102,7 @@ Server (150 tests, 11 files):
 ```
 
 Client (80 tests, 12 files):
+
 ```
  Test Files  12 passed (12)
       Tests  80 passed (80)

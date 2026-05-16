@@ -6,23 +6,23 @@
 
 ## Files Created
 
-| Path | Purpose |
-|------|---------|
-| `extension/src/activity-tracker.ts` | Table-driven state machine with 8 valid transitions per spec |
-| `extension/src/activity-tracker.test.ts` | 29 tests: all valid transitions, all invalid transitions, callbacks, timestamps |
-| `extension/src/tmux-target.ts` | Reads TMUX env var, runs `tmux display-message -p '#S:#I.#P'` |
-| `extension/src/tmux-target.test.ts` | 8 tests: happy path, missing env, exec failures, malformed output |
-| `extension/src/session-data.ts` | Collects model, turnCount, lastToolName, thinkingLevel, contextUsage |
-| `extension/src/session-data.test.ts` | 13 tests: all data collection methods and snapshot assembly |
-| `extension/src/heartbeat-client.ts` | fetch-based HTTP client with register/heartbeat/unregister and exponential backoff |
-| `extension/src/heartbeat-client.test.ts` | 19 tests: success path, backoff progression, cap, reset, network errors |
-| `extension/src/index.test.ts` | 9 integration tests: event wiring, payload assembly, lifecycle |
-| `extension/vitest.config.ts` | Vitest configuration with @pi-fleet/shared alias |
+| Path                                     | Purpose                                                                            |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| `extension/src/activity-tracker.ts`      | Table-driven state machine with 8 valid transitions per spec                       |
+| `extension/src/activity-tracker.test.ts` | 29 tests: all valid transitions, all invalid transitions, callbacks, timestamps    |
+| `extension/src/tmux-target.ts`           | Reads TMUX env var, runs `tmux display-message -p '#S:#I.#P'`                      |
+| `extension/src/tmux-target.test.ts`      | 8 tests: happy path, missing env, exec failures, malformed output                  |
+| `extension/src/session-data.ts`          | Collects model, turnCount, lastToolName, thinkingLevel, contextUsage               |
+| `extension/src/session-data.test.ts`     | 13 tests: all data collection methods and snapshot assembly                        |
+| `extension/src/heartbeat-client.ts`      | fetch-based HTTP client with register/heartbeat/unregister and exponential backoff |
+| `extension/src/heartbeat-client.test.ts` | 19 tests: success path, backoff progression, cap, reset, network errors            |
+| `extension/src/index.test.ts`            | 9 integration tests: event wiring, payload assembly, lifecycle                     |
+| `extension/vitest.config.ts`             | Vitest configuration with @pi-fleet/shared alias                                   |
 
 ## Files Modified
 
-| Path | Change |
-|------|--------|
+| Path                     | Change                                                                                         |
+| ------------------------ | ---------------------------------------------------------------------------------------------- |
 | `extension/src/index.ts` | Replaced empty export with full extension entry point wiring all modules to pi lifecycle hooks |
 
 ## Commits

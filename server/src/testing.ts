@@ -10,8 +10,8 @@ export type { PodEvent, PodEventListener } from "./pod-registry.js";
 export { EventBus } from "./event-bus.js";
 export type { SSEClient } from "./event-bus.js";
 export {
-  registerBodySchema,
-  heartbeatBodySchema,
-  ownershipBodySchema,
-  openTerminalBodySchema,
+	registerBodySchema,
+	heartbeatBodySchema,
+	ownershipBodySchema,
+	openTerminalBodySchema,
 } from "./schemas.js";

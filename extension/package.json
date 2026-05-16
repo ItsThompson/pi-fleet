@@ -1,25 +1,25 @@
 {
-  "name": "@pi-fleet/extension",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "main": "src/index.ts",
-  "pi": {
-    "extensions": [
-      "./src/index.ts"
-    ]
-  },
-  "scripts": {
-    "build": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
-  },
-  "dependencies": {
-    "@pi-fleet/shared": "*"
-  },
-  "devDependencies": {
-    "@mariozechner/pi-coding-agent": "*",
-    "@types/node": "^22.15.3",
-    "typescript": "^5.8.3",
-    "vitest": "^4.0.18"
-  }
+	"name": "@pi-fleet/extension",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "src/index.ts",
+	"pi": {
+		"extensions": [
+			"./src/index.ts"
+		]
+	},
+	"scripts": {
+		"build": "tsc --noEmit",
+		"test": "vitest run --passWithNoTests"
+	},
+	"dependencies": {
+		"@pi-fleet/shared": "*"
+	},
+	"devDependencies": {
+		"@mariozechner/pi-coding-agent": "*",
+		"@types/node": "^22.15.3",
+		"typescript": "^5.8.3",
+		"vitest": "^4.0.18"
+	}
 }

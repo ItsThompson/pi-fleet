@@ -1,53 +1,53 @@
 {
-  "name": "@pi-fleet/desktop",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "main": "dist/main.cjs",
-  "scripts": {
-    "build": "tsc --noEmit -p tsconfig.build.json && tsdown",
-    "start": "node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
-    "dev": "tsdown && node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
-    "postinstall": "node scripts/patch-electron-plist.mjs",
-    "test": "vitest run --passWithNoTests",
-    "dist": "tsdown && npx electron-builder --mac"
-  },
-  "build": {
-    "appId": "com.pi-fleet.app",
-    "productName": "PiFleet",
-    "electronVersion": "35.7.5",
-    "icon": "assets/icon.icns",
-    "mac": {
-      "target": "dmg",
-      "identity": null,
-      "extendInfo": {
-        "LSUIElement": true
-      }
-    },
-    "files": [
-      "dist/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "../server/dist",
-        "to": "server/dist"
-      },
-      {
-        "from": "../client/dist",
-        "to": "client/dist"
-      },
-      {
-        "from": "assets",
-        "to": "assets"
-      }
-    ]
-  },
-  "devDependencies": {
-    "@types/node": "^22.15.3",
-    "electron": "^35.0.0",
-    "electron-builder": "^26.8.1",
-    "tsdown": "^0.21.0",
-    "typescript": "^5.8.3",
-    "vitest": "^4.0.18"
-  }
+	"name": "@pi-fleet/desktop",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "dist/main.cjs",
+	"scripts": {
+		"build": "tsc --noEmit -p tsconfig.build.json && tsdown",
+		"start": "node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
+		"dev": "tsdown && node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
+		"postinstall": "node scripts/patch-electron-plist.mjs",
+		"test": "vitest run --passWithNoTests",
+		"dist": "tsdown && npx electron-builder --mac"
+	},
+	"build": {
+		"appId": "com.pi-fleet.app",
+		"productName": "PiFleet",
+		"electronVersion": "35.7.5",
+		"icon": "assets/icon.icns",
+		"mac": {
+			"target": "dmg",
+			"identity": null,
+			"extendInfo": {
+				"LSUIElement": true
+			}
+		},
+		"files": [
+			"dist/**/*"
+		],
+		"extraResources": [
+			{
+				"from": "../server/dist",
+				"to": "server/dist"
+			},
+			{
+				"from": "../client/dist",
+				"to": "client/dist"
+			},
+			{
+				"from": "assets",
+				"to": "assets"
+			}
+		]
+	},
+	"devDependencies": {
+		"@types/node": "^22.15.3",
+		"electron": "^35.0.0",
+		"electron-builder": "^26.8.1",
+		"tsdown": "^0.21.0",
+		"typescript": "^5.8.3",
+		"vitest": "^4.0.18"
+	}
 }

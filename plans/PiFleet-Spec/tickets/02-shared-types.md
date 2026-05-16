@@ -51,6 +51,7 @@ Define the shared type system in `@pi-fleet/shared`. This package provides the c
 ### Changes
 
 **Files created:**
+
 - `shared/src/types/session.ts`: ActivityStatus union, ContextUsagePayload, RegisterBody, HeartbeatBody, RegisteredSession
 - `shared/src/types/pod.ts`: Pod interface, STATE_PRIORITY constant
 - `shared/src/types/cluster.ts`: ClusterDefinition, ClusterConfig interfaces
@@ -90,6 +91,7 @@ Note: implementation was committed as part of the monorepo scaffold (concurrent 
 Typecheck: `tsc --noEmit` passes with no errors.
 
 Runtime verification:
+
 ```
 SERVER_PORT: 8314
 HEARTBEAT_INTERVAL_MS: 5000

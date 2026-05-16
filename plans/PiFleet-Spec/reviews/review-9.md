@@ -8,26 +8,26 @@
 
 ## 1. Acceptance Criteria Audit
 
-| Criterion | Status | Notes |
-|-----------|--------|-------|
-| Pod badge shows count of `pending_approval`/`idle`; hidden when 0 | ✅ Met | `AttentionBadge` returns null at count 0, renders numeric otherwise |
-| Cluster badge = sum of pod badges; hidden when 0 | ✅ Met | `ClusterSection` aggregates via `attentionCount` prop |
-| Badge count capped at "9+" for >9 | ✅ Met | `count > 9 ? "9+" : String(count)` in `AttentionBadge` |
-| Badges update in real-time via SSE | ✅ Met | Zustand reactive stores: SSE → session-store → pod-store → re-render |
-| Filter badges render in view headers | ✅ Met | `FilterBadges` integrated into `ClusterView`, `PodView`, `AllPodsView` |
-| Clicking filter badge toggles it | ✅ Met | `toggleFilter` with `aria-pressed` visual state |
-| Multiple filters use OR logic | ✅ Met | `passesFilter` checks `activeFilters.has(session.activity)` |
-| Active filter hides non-matching cards/pods | ✅ Met | Both views filter through `podPassesFilter`/`passesFilter` |
-| Clicking active badge clears it | ✅ Met | `toggleFilter` removes from set if present |
-| Bell icon in Header with panel | ✅ Met | Bell icon with click-to-toggle panel |
-| Bell icon shows total attention count | ✅ Met | `computeTotalAttention` counts idle + pending_approval |
-| Panel shows reverse-chronological entries | ✅ Met | `deriveNotificationEntries` sorts by `stateChangedAt` desc |
-| Entry shows: session name, pod, cluster, state, relative time | ✅ Met | `NotificationItem` renders all fields |
-| "Open" triggers terminal open | ✅ Met | `handleOpenInTerminal` calls `window.piFleet.openSession(sessionId)` |
-| Entry auto-removes on state change | ✅ Met | Derived reactively: non-attention sessions excluded |
-| `activityChangedAt` tracked per session | ✅ Met | In `session-store`, updated on activity field change |
-| Unit tests for filter-store | ✅ Met | 16 tests covering toggle, clear, passesFilter, podPassesFilter, OR logic |
-| Component tests for NotificationPanel | ✅ Met | 6 tests: entries, "Open" button IPC, empty state, close, cluster name |
+| Criterion                                                         | Status | Notes                                                                    |
+| ----------------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
+| Pod badge shows count of `pending_approval`/`idle`; hidden when 0 | ✅ Met | `AttentionBadge` returns null at count 0, renders numeric otherwise      |
+| Cluster badge = sum of pod badges; hidden when 0                  | ✅ Met | `ClusterSection` aggregates via `attentionCount` prop                    |
+| Badge count capped at "9+" for >9                                 | ✅ Met | `count > 9 ? "9+" : String(count)` in `AttentionBadge`                   |
+| Badges update in real-time via SSE                                | ✅ Met | Zustand reactive stores: SSE → session-store → pod-store → re-render     |
+| Filter badges render in view headers                              | ✅ Met | `FilterBadges` integrated into `ClusterView`, `PodView`, `AllPodsView`   |
+| Clicking filter badge toggles it                                  | ✅ Met | `toggleFilter` with `aria-pressed` visual state                          |
+| Multiple filters use OR logic                                     | ✅ Met | `passesFilter` checks `activeFilters.has(session.activity)`              |
+| Active filter hides non-matching cards/pods                       | ✅ Met | Both views filter through `podPassesFilter`/`passesFilter`               |
+| Clicking active badge clears it                                   | ✅ Met | `toggleFilter` removes from set if present                               |
+| Bell icon in Header with panel                                    | ✅ Met | Bell icon with click-to-toggle panel                                     |
+| Bell icon shows total attention count                             | ✅ Met | `computeTotalAttention` counts idle + pending_approval                   |
+| Panel shows reverse-chronological entries                         | ✅ Met | `deriveNotificationEntries` sorts by `stateChangedAt` desc               |
+| Entry shows: session name, pod, cluster, state, relative time     | ✅ Met | `NotificationItem` renders all fields                                    |
+| "Open" triggers terminal open                                     | ✅ Met | `handleOpenInTerminal` calls `window.piFleet.openSession(sessionId)`     |
+| Entry auto-removes on state change                                | ✅ Met | Derived reactively: non-attention sessions excluded                      |
+| `activityChangedAt` tracked per session                           | ✅ Met | In `session-store`, updated on activity field change                     |
+| Unit tests for filter-store                                       | ✅ Met | 16 tests covering toggle, clear, passesFilter, podPassesFilter, OR logic |
+| Component tests for NotificationPanel                             | ✅ Met | 6 tests: entries, "Open" button IPC, empty state, close, cluster name    |
 
 ---
 
@@ -64,6 +64,7 @@
 ## 3. Test Quality
 
 **Strong points:**
+
 - Factory functions (`buildSession`, `buildPod`, `buildCluster`) used across all test files
 - Tests verify behavior through public interfaces (store methods, rendered output)
 - Edge cases covered: missing sessions in `podPassesFilter`, zero count, future timestamps, no pod for session
@@ -71,6 +72,7 @@
 - IPC bridge test properly sets up and tears down `window.piFleet`
 
 **Test count verification (actual vs completion summary):**
+
 - filter-store: 16 actual (summary said 13): more tests than claimed
 - FilterBadges: 6 actual (summary said 4): more tests than claimed
 - NotificationPanel: 6 actual (summary said 5): more tests than claimed
@@ -89,9 +91,10 @@ All actual test counts exceed or match claims: no missing coverage.
 **Files:** `client/src/components/clusters/ClusterView.tsx:17`, `client/src/components/pods/PodView.tsx:12`
 
 Both define:
+
 ```typescript
 function needsAttention(state: ActivityStatus): boolean {
-  return state === "pending_approval" || state === "idle";
+	return state === "pending_approval" || state === "idle";
 }
 ```
 
@@ -106,9 +109,10 @@ This is a domain truth (which states constitute "needs attention") already codif
 **Files:** `client/src/stores/cluster-store.ts:4`, `client/src/components/attention/derive-notifications.ts:4`
 
 Both define:
+
 ```typescript
 interface ClusterWithPods extends ClusterDefinition {
-  podIds: string[];
+	podIds: string[];
 }
 ```
 
@@ -125,6 +129,7 @@ The `derive-notifications.ts` version omits `attentionCount` but both extend the
 The `computeTotalAttention` function re-implements the "idle or pending_approval" check inline rather than referencing `ATTENTION_STATES` from filter-store.
 
 **Suggested fix:** Import and use `ATTENTION_STATES` from filter-store:
+
 ```typescript
 import { ATTENTION_STATES } from "@/stores/filter-store";
 // ...
@@ -146,7 +151,9 @@ if (ATTENTION_STATES.has(session.activity as ActivityStatus)) count += 1;
 **File:** `client/src/components/attention/NotificationPanel.tsx:15`
 
 ```typescript
-const bridge = (window as unknown as { piFleet?: { openSession: (id: string) => void } }).piFleet;
+const bridge = (
+	window as unknown as { piFleet?: { openSession: (id: string) => void } }
+).piFleet;
 ```
 
 This is fine for Electron bridge interop, but could be cleaner with a declared global interface in a `global.d.ts`. This is a pre-existing pattern though, so not something this ticket should change.

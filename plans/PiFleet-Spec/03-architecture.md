@@ -138,18 +138,21 @@
 ```
 
 **Existing dependencies (from pi-watch, carried forward):**
+
 - Electron (app shell, tray, global shortcuts)
 - Fastify + @fastify/static (HTTP server)
 - Zod (payload validation)
 - Turborepo (monorepo build orchestration)
 
 **New dependencies:**
+
 - shadcn/ui (component library, built on Radix + Tailwind)
 - zustand (client state management)
 - @dnd-kit/core + @dnd-kit/sortable (drag-and-drop)
 - Tailwind CSS (styling, required by shadcn)
 
 **Removed from pi-watch:**
+
 - SWR (replaced by zustand with SSE subscription)
 
 ## High-Level Architecture Diagram
@@ -186,25 +189,25 @@
 
 ## Component Roles
 
-| Component | Responsibility | Module Type |
-|-----------|---------------|-------------|
-| `shared/types/` | Type definitions shared across all packages | Thin (types only) |
-| `server/session-registry` | In-memory session store, change event emission | Deep module |
-| `server/pod-registry` | Compute pods from sessions + ownership reports | Deep module |
-| `server/cluster-store` | Read/write cluster config, assignment logic | Deep module |
-| `server/event-bus` | Fan-out SSE events to connected clients | Thin adapter |
-| `server/routes/*` | HTTP endpoint handlers, validation | Thin adapters |
-| `desktop/terminal-opener` | tmux switch + window activation orchestration | Deep module |
-| `desktop/window` | BrowserWindow lifecycle, ghost mode, resize | Adapter |
-| `client/stores/*` | Zustand state: sessions, pods, clusters, filters, nav | Deep modules |
-| `client/components/dnd/*` | @dnd-kit integration: sensors, drag/drop wiring | Adapter |
-| `client/components/clusters/*` | Cluster UI: sidebar sections, card grids, forms | UI components |
-| `client/components/pods/*` | Pod UI: cards, rows, detail views | UI components |
-| `client/components/sessions/*` | Session UI: rich cards, status indicators | UI components |
-| `client/components/attention/*` | Attention UI: badges, filters, notification list | UI components |
-| `extension/index` | Lifecycle hooks, inter-extension protocol wiring | Orchestrator |
-| `extension/session-data` | Collect model/context/turns from pi API | Deep module |
-| `extension/pod-reporter` | Signal/request/response protocol for ownership | Deep module |
+| Component                       | Responsibility                                        | Module Type       |
+| ------------------------------- | ----------------------------------------------------- | ----------------- |
+| `shared/types/`                 | Type definitions shared across all packages           | Thin (types only) |
+| `server/session-registry`       | In-memory session store, change event emission        | Deep module       |
+| `server/pod-registry`           | Compute pods from sessions + ownership reports        | Deep module       |
+| `server/cluster-store`          | Read/write cluster config, assignment logic           | Deep module       |
+| `server/event-bus`              | Fan-out SSE events to connected clients               | Thin adapter      |
+| `server/routes/*`               | HTTP endpoint handlers, validation                    | Thin adapters     |
+| `desktop/terminal-opener`       | tmux switch + window activation orchestration         | Deep module       |
+| `desktop/window`                | BrowserWindow lifecycle, ghost mode, resize           | Adapter           |
+| `client/stores/*`               | Zustand state: sessions, pods, clusters, filters, nav | Deep modules      |
+| `client/components/dnd/*`       | @dnd-kit integration: sensors, drag/drop wiring       | Adapter           |
+| `client/components/clusters/*`  | Cluster UI: sidebar sections, card grids, forms       | UI components     |
+| `client/components/pods/*`      | Pod UI: cards, rows, detail views                     | UI components     |
+| `client/components/sessions/*`  | Session UI: rich cards, status indicators             | UI components     |
+| `client/components/attention/*` | Attention UI: badges, filters, notification list      | UI components     |
+| `extension/index`               | Lifecycle hooks, inter-extension protocol wiring      | Orchestrator      |
+| `extension/session-data`        | Collect model/context/turns from pi API               | Deep module       |
+| `extension/pod-reporter`        | Signal/request/response protocol for ownership        | Deep module       |
 
 ## Data Flow: Session Registration (Happy Path)
 
@@ -292,15 +295,15 @@ subagent-orchestrator spawns a child
 
 ## Key Architectural Decisions
 
-| Decision | Rationale | Alternatives Considered |
-|----------|-----------|------------------------|
-| Fork pi-watch as starting point | Proven Electron + Fastify + extension architecture; saves weeks of boilerplate | Build from scratch (too slow), modify pi-watch in-place (risk breaking existing users) |
-| shadcn + Tailwind for UI | Consistent design system, accessible primitives, composable components | Keep custom CSS (pi-watch style: inline styles, no component lib) |
-| zustand for state | Minimal boilerplate, supports SSE subscription patterns, no provider nesting | SWR (current pi-watch: too limited for complex state), Redux (too heavy) |
-| @dnd-kit for drag-and-drop | Best React DnD lib for accessibility + performance, native shadcn integration, kanban-proven | react-beautiful-dnd (deprecated), HTML5 drag API (poor UX), pragmatic-drag-and-drop (less mature) |
-| Pod computation on server | Single source of truth: all clients see same pod structure, no client-side drift | Client-side computation (each client computes differently, stale data risk) |
-| Inter-extension protocol via pi.events | Zero coupling: subagent-orchestrator is unmodified, pi-fleet depends on it one-way | Direct import (tight coupling), file-based (latency), shared DB (overkill) |
-| Signal/request/response pattern | Subagent-orchestrator never knows about pi-fleet; pi-fleet initiates all data requests | Direct event payload (would require modifying subagent-orchestrator) |
-| Cluster config in Application Support | Standard macOS location for app state, survives app updates, easy to inspect/edit | SQLite (overkill), plist (harder to edit), dotfile (clutters home) |
-| Embedded Fastify server | Extensions POST directly to localhost; no IPC complexity for multi-session coordination | Electron IPC only (can't receive from extensions in other processes) |
-| Bigger window, same menu-bar pattern | Users want a dashboard they can summon/dismiss instantly, not a full desktop app | Full windowed app (loses quick-access UX), keep tiny overlay (insufficient space for card grids) |
+| Decision                               | Rationale                                                                                    | Alternatives Considered                                                                           |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Fork pi-watch as starting point        | Proven Electron + Fastify + extension architecture; saves weeks of boilerplate               | Build from scratch (too slow), modify pi-watch in-place (risk breaking existing users)            |
+| shadcn + Tailwind for UI               | Consistent design system, accessible primitives, composable components                       | Keep custom CSS (pi-watch style: inline styles, no component lib)                                 |
+| zustand for state                      | Minimal boilerplate, supports SSE subscription patterns, no provider nesting                 | SWR (current pi-watch: too limited for complex state), Redux (too heavy)                          |
+| @dnd-kit for drag-and-drop             | Best React DnD lib for accessibility + performance, native shadcn integration, kanban-proven | react-beautiful-dnd (deprecated), HTML5 drag API (poor UX), pragmatic-drag-and-drop (less mature) |
+| Pod computation on server              | Single source of truth: all clients see same pod structure, no client-side drift             | Client-side computation (each client computes differently, stale data risk)                       |
+| Inter-extension protocol via pi.events | Zero coupling: subagent-orchestrator is unmodified, pi-fleet depends on it one-way           | Direct import (tight coupling), file-based (latency), shared DB (overkill)                        |
+| Signal/request/response pattern        | Subagent-orchestrator never knows about pi-fleet; pi-fleet initiates all data requests       | Direct event payload (would require modifying subagent-orchestrator)                              |
+| Cluster config in Application Support  | Standard macOS location for app state, survives app updates, easy to inspect/edit            | SQLite (overkill), plist (harder to edit), dotfile (clutters home)                                |
+| Embedded Fastify server                | Extensions POST directly to localhost; no IPC complexity for multi-session coordination      | Electron IPC only (can't receive from extensions in other processes)                              |
+| Bigger window, same menu-bar pattern   | Users want a dashboard they can summon/dismiss instantly, not a full desktop app             | Full windowed app (loses quick-access UX), keep tiny overlay (insufficient space for card grids)  |

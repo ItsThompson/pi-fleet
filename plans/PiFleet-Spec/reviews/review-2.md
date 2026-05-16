@@ -8,18 +8,18 @@
 
 ## 1. Acceptance Criteria Audit
 
-| # | Criterion | Status | Notes |
-|---|-----------|--------|-------|
-| 1 | `session.ts` exports `ActivityStatus`, `RegisteredSession`, `RegisterBody`, `HeartbeatBody`, `ContextUsagePayload` | ✅ Met | All present with correct shapes |
-| 2 | `pod.ts` exports `Pod` with `leadSessionId`, `memberSessionIds`, `displayName`, `state`, `attentionCount` | ✅ Met | Also exports `STATE_PRIORITY` (good addition) |
-| 3 | `cluster.ts` exports `ClusterDefinition`, `ClusterConfig` | ✅ Met | Matches spec section 06 exactly |
-| 4 | `config.ts` exports `PiFleetConfig` with version field and preferences | ✅ Met | Literal type `version: 1` enables migration patterns |
-| 5 | `events.ts` exports `SSEEvent` discriminated union (all event types from spec 09) | ✅ Met | 13 event types matching spec; ticket said "12" but implementation correctly followed the spec |
-| 6 | `terminal.ts` exports `TmuxTarget`, `OpenResult`, `OpenFailureReason` | ✅ Met | Matches spec section 04 exactly |
-| 7 | `constants.ts` exports `SERVER_PORT`, `HEARTBEAT_INTERVAL_MS`, `REAP_TIMEOUT_MS`, `SSE_KEEPALIVE_MS` | ✅ Met | Values match spec |
-| 8 | `paths.ts` exports `getConfigPath()`, `getLogPath()` resolving to macOS standard locations | ✅ Met | Also exports `getConfigDir()`, `getLogDir()` |
-| 9 | `index.ts` re-exports all public types and constants | ✅ Met | Barrel covers all modules |
-| 10 | Package builds cleanly and is importable | ✅ Met | `tsc --noEmit` passes, tests pass |
+| #   | Criterion                                                                                                          | Status | Notes                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------ | ------ | --------------------------------------------------------------------------------------------- |
+| 1   | `session.ts` exports `ActivityStatus`, `RegisteredSession`, `RegisterBody`, `HeartbeatBody`, `ContextUsagePayload` | ✅ Met | All present with correct shapes                                                               |
+| 2   | `pod.ts` exports `Pod` with `leadSessionId`, `memberSessionIds`, `displayName`, `state`, `attentionCount`          | ✅ Met | Also exports `STATE_PRIORITY` (good addition)                                                 |
+| 3   | `cluster.ts` exports `ClusterDefinition`, `ClusterConfig`                                                          | ✅ Met | Matches spec section 06 exactly                                                               |
+| 4   | `config.ts` exports `PiFleetConfig` with version field and preferences                                             | ✅ Met | Literal type `version: 1` enables migration patterns                                          |
+| 5   | `events.ts` exports `SSEEvent` discriminated union (all event types from spec 09)                                  | ✅ Met | 13 event types matching spec; ticket said "12" but implementation correctly followed the spec |
+| 6   | `terminal.ts` exports `TmuxTarget`, `OpenResult`, `OpenFailureReason`                                              | ✅ Met | Matches spec section 04 exactly                                                               |
+| 7   | `constants.ts` exports `SERVER_PORT`, `HEARTBEAT_INTERVAL_MS`, `REAP_TIMEOUT_MS`, `SSE_KEEPALIVE_MS`               | ✅ Met | Values match spec                                                                             |
+| 8   | `paths.ts` exports `getConfigPath()`, `getLogPath()` resolving to macOS standard locations                         | ✅ Met | Also exports `getConfigDir()`, `getLogDir()`                                                  |
+| 9   | `index.ts` re-exports all public types and constants                                                               | ✅ Met | Barrel covers all modules                                                                     |
+| 10  | Package builds cleanly and is importable                                                                           | ✅ Met | `tsc --noEmit` passes, tests pass                                                             |
 
 ---
 
@@ -32,6 +32,7 @@ Excellent throughout. Types use PascalCase, constants use UPPER_SNAKE_CASE, func
 ### Structure
 
 Clean single-responsibility decomposition:
+
 - One file per domain concept (session, pod, cluster, config, events, terminal)
 - Constants isolated from types
 - Path logic separated from everything else
@@ -103,6 +104,7 @@ N/A for this ticket (types-only package with constants and path utilities). Path
 All 10 acceptance criteria are met. Types match the spec exactly across sections 04, 06, 08, and 09. The implementation correctly followed the spec over the ticket text where they diverged (13 events vs "12"). Build and tests pass cleanly. Code is well-structured, properly typed, and appropriately tested for a types+constants package.
 
 **What was done well:**
+
 - Spec-faithful implementation with no drift
 - Clean file decomposition (one concept per file)
 - `SSEEventType` helper type is a good ergonomic addition

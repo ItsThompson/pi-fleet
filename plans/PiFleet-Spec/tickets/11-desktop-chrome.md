@@ -60,6 +60,7 @@ Wire up the Electron main process: BrowserWindow as menu-bar overlay, F5 global 
 ### Changes
 
 **Files created:**
+
 - `desktop/src/config.ts`: Config persistence (load/save/manager with debounced writes)
 - `desktop/src/config.test.ts`: Config unit tests (load, save, manager, migration)
 - `desktop/src/window.ts`: BrowserWindow manager (overlay, ghost mode, positioning)
@@ -73,6 +74,7 @@ Wire up the Electron main process: BrowserWindow as menu-bar overlay, F5 global 
 - `desktop/assets/trayTemplate.png`: Placeholder tray icon (16x16 template)
 
 **Files modified:**
+
 - `desktop/src/main.ts`: Complete rewrite to wire all modules together (app lifecycle, IPC, shortcuts, sound)
 - `desktop/tsdown.config.ts`: Added preload.ts as separate build entry point
 

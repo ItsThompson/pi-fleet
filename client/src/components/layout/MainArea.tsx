@@ -7,20 +7,20 @@ import { AllPodsView } from "@/components/pods/AllPodsView";
 import { EmptyState } from "@/components/layout/EmptyState";
 
 export function MainArea() {
-  const { current } = useNavigationStore();
-  const sessions = useSessionStore((state) => state.sessions);
-  const pods = usePodStore((state) => state.pods);
+	const { current } = useNavigationStore();
+	const sessions = useSessionStore((state) => state.sessions);
+	const pods = usePodStore((state) => state.pods);
 
-  if (sessions.size === 0) return <EmptyState />;
+	if (sessions.size === 0) return <EmptyState />;
 
-  if (current.view === "pod" && current.id) {
-    const pod = pods.get(current.id);
-    if (pod) return <PodView pod={pod} />;
-  }
+	if (current.view === "pod" && current.id) {
+		const pod = pods.get(current.id);
+		if (pod) return <PodView pod={pod} />;
+	}
 
-  if (current.view === "cluster" && current.id) {
-    return <ClusterView clusterId={current.id} />;
-  }
+	if (current.view === "cluster" && current.id) {
+		return <ClusterView clusterId={current.id} />;
+	}
 
-  return <AllPodsView />;
+	return <AllPodsView />;
 }

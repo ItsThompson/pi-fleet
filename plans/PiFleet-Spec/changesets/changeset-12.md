@@ -12,36 +12,36 @@ Implemented full E2E smoke test suite (42 tests) covering all 6 spec scenarios p
 
 ### E2E Test Suite (`e2e/`)
 
-| File | Purpose |
-|------|---------|
-| `src/helpers/test-harness.ts` | Creates isolated server on random port with temp config |
-| `src/helpers/mock-session.ts` | MockSession class: register, heartbeat, unregister |
-| `src/helpers/index.ts` | Barrel export |
-| `src/smoke-1-session-lifecycle.test.ts` | 7 tests: register, heartbeat, pods, unregister, metadata, terminal, SSE |
-| `src/smoke-2-pod-formation.test.ts` | 5 tests: ownership, child/parent death, aggregation, deferred match |
-| `src/smoke-3-cluster-management.test.ts` | 7 tests: CRUD, directory match, manual override, persistence, reorder |
-| `src/smoke-4-attention-system.test.ts` | 6 tests: pod badges, cluster sums, approval clears, SSE, aggregation |
-| `src/smoke-5-ghost-mode-sound.test.ts` | 4 tests: idle SSE, activity state, health, dedup contract |
-| `src/smoke-6-dnd-reordering.test.ts` | 5 tests: reassign API, reorder, SSE, manual override durability |
-| `src/empty-state-polish.test.ts` | 6 tests: zero sessions/clusters, pi-watch, first-session |
-| `vitest.config.ts` | Test runner config (15s timeout) |
-| `package.json` | Switched to vitest, added @pi-fleet/server dep |
-| `tsconfig.json` | Simplified TS config |
+| File                                     | Purpose                                                                 |
+| ---------------------------------------- | ----------------------------------------------------------------------- |
+| `src/helpers/test-harness.ts`            | Creates isolated server on random port with temp config                 |
+| `src/helpers/mock-session.ts`            | MockSession class: register, heartbeat, unregister                      |
+| `src/helpers/index.ts`                   | Barrel export                                                           |
+| `src/smoke-1-session-lifecycle.test.ts`  | 7 tests: register, heartbeat, pods, unregister, metadata, terminal, SSE |
+| `src/smoke-2-pod-formation.test.ts`      | 5 tests: ownership, child/parent death, aggregation, deferred match     |
+| `src/smoke-3-cluster-management.test.ts` | 7 tests: CRUD, directory match, manual override, persistence, reorder   |
+| `src/smoke-4-attention-system.test.ts`   | 6 tests: pod badges, cluster sums, approval clears, SSE, aggregation    |
+| `src/smoke-5-ghost-mode-sound.test.ts`   | 4 tests: idle SSE, activity state, health, dedup contract               |
+| `src/smoke-6-dnd-reordering.test.ts`     | 5 tests: reassign API, reorder, SSE, manual override durability         |
+| `src/empty-state-polish.test.ts`         | 6 tests: zero sessions/clusters, pi-watch, first-session                |
+| `vitest.config.ts`                       | Test runner config (15s timeout)                                        |
+| `package.json`                           | Switched to vitest, added @pi-fleet/server dep                          |
+| `tsconfig.json`                          | Simplified TS config                                                    |
 
 ### Server Changes
 
-| File | Change |
-|------|--------|
+| File                           | Change                                                  |
+| ------------------------------ | ------------------------------------------------------- |
 | `src/utils/pi-watch-detect.ts` | New: checks `~/.pi/agent/extensions/pi-watch` existence |
-| `src/routes/health.ts` | Added `piWatchDetected` field to health response |
+| `src/routes/health.ts`         | Added `piWatchDetected` field to health response        |
 
 ### Client Changes
 
-| File | Change |
-|------|--------|
-| `src/hooks/useHealth.ts` | New: fetches health data for pi-watch detection |
-| `src/components/layout/Header.tsx` | Added dismissable PiWatchNotice component |
-| `src/components/layout/MainArea.tsx` | Enhanced EmptyState with full setup guide |
+| File                                 | Change                                          |
+| ------------------------------------ | ----------------------------------------------- |
+| `src/hooks/useHealth.ts`             | New: fetches health data for pi-watch detection |
+| `src/components/layout/Header.tsx`   | Added dismissable PiWatchNotice component       |
+| `src/components/layout/MainArea.tsx` | Enhanced EmptyState with full setup guide       |
 
 ## Test Results
 

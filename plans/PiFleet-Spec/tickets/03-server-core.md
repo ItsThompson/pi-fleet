@@ -56,6 +56,7 @@ Build the Fastify server with session lifecycle endpoints and SSE event streamin
 ### Changes
 
 **Files created:**
+
 - `server/src/server.ts`: Server factory with route registration, EventBus wiring, start/stop lifecycle
 - `server/src/session-registry.ts`: In-memory session store with register/heartbeat/unregister/reap and typed event emission
 - `server/src/event-bus.ts`: SSE fan-out to connected clients with disconnect handling
@@ -73,6 +74,7 @@ Build the Fastify server with session lifecycle endpoints and SSE event streamin
 - `server/src/sse.test.ts`: SSE + port conflict integration tests with real HTTP (5 tests)
 
 **Files modified:**
+
 - `server/src/index.ts`: Added barrel exports for server factory, registry, EventBus, schemas
 - `server/tsconfig.build.json`: Excluded test and dev files from production build
 

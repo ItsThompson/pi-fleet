@@ -10,26 +10,26 @@ Implemented the full Electron main process for pi-fleet: menu-bar overlay window
 
 ## Files Created
 
-| Path | Purpose |
-|------|---------|
-| `desktop/src/config.ts` | Config load/save/manager with debounced auto-persistence |
-| `desktop/src/config.test.ts` | Unit tests for config persistence |
-| `desktop/src/window.ts` | BrowserWindow manager: overlay positioning, ghost mode, visibility toggle |
-| `desktop/src/window.test.ts` | Unit tests for window manager |
-| `desktop/src/tray.ts` | System tray icon and context menu (Show/Hide, Ghost, Sound, Quit) |
-| `desktop/src/sound.ts` | Sound alert manager with per-session state deduplication |
-| `desktop/src/sound.test.ts` | Unit tests for sound manager |
-| `desktop/src/server.ts` | Embedded server lifecycle with port conflict dialog + retry |
-| `desktop/src/server.test.ts` | Unit tests for embedded server |
-| `desktop/src/preload.ts` | Context bridge: `window.piFleet` API (6 methods) |
-| `desktop/assets/trayTemplate.png` | Placeholder tray template icon (16x16) |
+| Path                              | Purpose                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| `desktop/src/config.ts`           | Config load/save/manager with debounced auto-persistence                  |
+| `desktop/src/config.test.ts`      | Unit tests for config persistence                                         |
+| `desktop/src/window.ts`           | BrowserWindow manager: overlay positioning, ghost mode, visibility toggle |
+| `desktop/src/window.test.ts`      | Unit tests for window manager                                             |
+| `desktop/src/tray.ts`             | System tray icon and context menu (Show/Hide, Ghost, Sound, Quit)         |
+| `desktop/src/sound.ts`            | Sound alert manager with per-session state deduplication                  |
+| `desktop/src/sound.test.ts`       | Unit tests for sound manager                                              |
+| `desktop/src/server.ts`           | Embedded server lifecycle with port conflict dialog + retry               |
+| `desktop/src/server.test.ts`      | Unit tests for embedded server                                            |
+| `desktop/src/preload.ts`          | Context bridge: `window.piFleet` API (6 methods)                          |
+| `desktop/assets/trayTemplate.png` | Placeholder tray template icon (16x16)                                    |
 
 ## Files Modified
 
-| Path | Change |
-|------|--------|
-| `desktop/src/main.ts` | Complete rewrite: app lifecycle, IPC handlers, shortcut registration, sound wiring, graceful shutdown |
-| `desktop/tsdown.config.ts` | Added `preload.ts` as separate CJS entry point |
+| Path                       | Change                                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `desktop/src/main.ts`      | Complete rewrite: app lifecycle, IPC handlers, shortcut registration, sound wiring, graceful shutdown |
+| `desktop/tsdown.config.ts` | Added `preload.ts` as separate CJS entry point                                                        |
 
 ## Architecture
 

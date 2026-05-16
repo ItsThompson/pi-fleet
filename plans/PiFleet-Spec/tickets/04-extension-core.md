@@ -58,6 +58,7 @@ Build the pi-fleet extension that runs inside each pi session process. It regist
 ### Changes
 
 **Files created:**
+
 - `extension/src/activity-tracker.ts`: Table-driven state machine with 8 transitions, ignores invalid events
 - `extension/src/activity-tracker.test.ts`: 29 tests covering all valid transitions, all invalid transitions, callbacks, timestamps
 - `extension/src/tmux-target.ts`: Reads TMUX env var and runs tmux display-message to capture session:window.pane
@@ -70,6 +71,7 @@ Build the pi-fleet extension that runs inside each pi session process. It regist
 - `extension/vitest.config.ts`: Vitest configuration with @pi-fleet/shared alias
 
 **Files modified:**
+
 - `extension/src/index.ts`: Replaced empty export with full extension entry point wiring all modules to pi lifecycle hooks
 
 ### Commits

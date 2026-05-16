@@ -11,30 +11,30 @@
 
 ## Files Created
 
-| Path | Purpose |
-|------|---------|
-| `server/src/server.ts` | Server factory with route registration, EventBus wiring, start/stop lifecycle |
-| `server/src/session-registry.ts` | In-memory session store with register/heartbeat/unregister/reap and typed event emission |
-| `server/src/event-bus.ts` | SSE fan-out to connected clients with disconnect handling |
-| `server/src/schemas.ts` | Zod validation schemas for register and heartbeat payloads |
-| `server/src/routes/sessions.ts` | Session lifecycle HTTP endpoint handlers |
-| `server/src/routes/events.ts` | SSE streaming endpoint with connected event and keep-alive |
-| `server/src/routes/health.ts` | Health check endpoint |
-| `server/src/utils/logger.ts` | Structured JSON logging to ~/Library/Logs/PiFleet/pi-fleet.log |
-| `server/src/dev.ts` | Development entry point for local testing |
-| `server/vitest.config.ts` | Test configuration with globals |
-| `server/src/schemas.test.ts` | Zod schema validation tests (18 tests) |
-| `server/src/session-registry.test.ts` | Registry logic tests (15 tests) |
-| `server/src/event-bus.test.ts` | EventBus broadcast and client management tests (6 tests) |
-| `server/src/server.test.ts` | Route integration tests via Fastify inject (15 tests) |
-| `server/src/sse.test.ts` | SSE + port conflict integration tests with real HTTP (5 tests) |
+| Path                                  | Purpose                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `server/src/server.ts`                | Server factory with route registration, EventBus wiring, start/stop lifecycle            |
+| `server/src/session-registry.ts`      | In-memory session store with register/heartbeat/unregister/reap and typed event emission |
+| `server/src/event-bus.ts`             | SSE fan-out to connected clients with disconnect handling                                |
+| `server/src/schemas.ts`               | Zod validation schemas for register and heartbeat payloads                               |
+| `server/src/routes/sessions.ts`       | Session lifecycle HTTP endpoint handlers                                                 |
+| `server/src/routes/events.ts`         | SSE streaming endpoint with connected event and keep-alive                               |
+| `server/src/routes/health.ts`         | Health check endpoint                                                                    |
+| `server/src/utils/logger.ts`          | Structured JSON logging to ~/Library/Logs/PiFleet/pi-fleet.log                           |
+| `server/src/dev.ts`                   | Development entry point for local testing                                                |
+| `server/vitest.config.ts`             | Test configuration with globals                                                          |
+| `server/src/schemas.test.ts`          | Zod schema validation tests (18 tests)                                                   |
+| `server/src/session-registry.test.ts` | Registry logic tests (15 tests)                                                          |
+| `server/src/event-bus.test.ts`        | EventBus broadcast and client management tests (6 tests)                                 |
+| `server/src/server.test.ts`           | Route integration tests via Fastify inject (15 tests)                                    |
+| `server/src/sse.test.ts`              | SSE + port conflict integration tests with real HTTP (5 tests)                           |
 
 ## Files Modified
 
-| Path | Change |
-|------|--------|
-| `server/src/index.ts` | Added barrel exports for server factory, registry, EventBus, schemas |
-| `server/tsconfig.build.json` | Excluded test and dev files from production build |
+| Path                         | Change                                                               |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `server/src/index.ts`        | Added barrel exports for server factory, registry, EventBus, schemas |
+| `server/tsconfig.build.json` | Excluded test and dev files from production build                    |
 
 ## Test Results
 

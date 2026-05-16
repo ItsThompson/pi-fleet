@@ -6,24 +6,24 @@
 
 ## Files Created
 
-| Path | Purpose |
-|------|---------|
-| `server/src/routes/open-terminal.ts` | POST /api/open-terminal route: resolves session to tmux target |
-| `server/src/routes/open-terminal.test.ts` | 5 tests: valid session, 404, 400, validation, non-numeric names |
-| `desktop/src/terminal-opener.ts` | Core module: parse → validate → list-clients → switch → activate |
-| `desktop/src/terminal-opener.test.ts` | 40 tests: all parsing, validation, client classification, and failure modes |
-| `desktop/src/ipc-open-session.ts` | IPC handler: wires renderer pf:open-session to server + opener |
-| `desktop/src/ipc-open-session.test.ts` | 3 integration tests: full flow via real server |
-| `desktop/tsconfig.build.json` | Build-only tsconfig excluding test files |
+| Path                                      | Purpose                                                                     |
+| ----------------------------------------- | --------------------------------------------------------------------------- |
+| `server/src/routes/open-terminal.ts`      | POST /api/open-terminal route: resolves session to tmux target              |
+| `server/src/routes/open-terminal.test.ts` | 5 tests: valid session, 404, 400, validation, non-numeric names             |
+| `desktop/src/terminal-opener.ts`          | Core module: parse → validate → list-clients → switch → activate            |
+| `desktop/src/terminal-opener.test.ts`     | 40 tests: all parsing, validation, client classification, and failure modes |
+| `desktop/src/ipc-open-session.ts`         | IPC handler: wires renderer pf:open-session to server + opener              |
+| `desktop/src/ipc-open-session.test.ts`    | 3 integration tests: full flow via real server                              |
+| `desktop/tsconfig.build.json`             | Build-only tsconfig excluding test files                                    |
 
 ## Files Modified
 
-| Path | Change |
-|------|--------|
-| `desktop/src/main.ts` | Wires IPC handler on app.whenReady() |
-| `desktop/package.json` | Build script uses tsconfig.build.json |
+| Path                    | Change                                          |
+| ----------------------- | ----------------------------------------------- |
+| `desktop/src/main.ts`   | Wires IPC handler on app.whenReady()            |
+| `desktop/package.json`  | Build script uses tsconfig.build.json           |
 | `desktop/tsconfig.json` | rootDir adjusted for cross-package test imports |
-| `server/src/index.ts` | Export openTerminalBodySchema |
+| `server/src/index.ts`   | Export openTerminalBodySchema                   |
 
 ## Commits
 
@@ -50,15 +50,15 @@ Type checking passes for all packages (`tsc --noEmit`).
 
 ## pi-watch Bug Fixes
 
-| # | Fix | Implementation |
-|---|-----|----------------|
-| 1 | Window activation after tmux switch | `activateTerminal()` runs osascript after successful switch |
-| 2 | list-clients scoped to session | `listClients()` uses `-t <session>` flag |
-| 3 | Regex mismatch (non-numeric names) | Regex: `/^(.+):(.+)\.(\d+)$/` accepts any session/window name |
-| 4 | Stale target persistence | `pane-not-found` result signals caller to clear stale target |
-| 5 | No feedback on failure | All failure modes produce user notifications via injected notify |
-| 6 | Shell interpolation risk | All tmux commands use execFile with args arrays, never shell |
-| 7 | No pane existence validation | `validatePane()` runs `tmux display-message -t <target> -p ""` |
+| #   | Fix                                 | Implementation                                                   |
+| --- | ----------------------------------- | ---------------------------------------------------------------- |
+| 1   | Window activation after tmux switch | `activateTerminal()` runs osascript after successful switch      |
+| 2   | list-clients scoped to session      | `listClients()` uses `-t <session>` flag                         |
+| 3   | Regex mismatch (non-numeric names)  | Regex: `/^(.+):(.+)\.(\d+)$/` accepts any session/window name    |
+| 4   | Stale target persistence            | `pane-not-found` result signals caller to clear stale target     |
+| 5   | No feedback on failure              | All failure modes produce user notifications via injected notify |
+| 6   | Shell interpolation risk            | All tmux commands use execFile with args arrays, never shell     |
+| 7   | No pane existence validation        | `validatePane()` runs `tmux display-message -t <target> -p ""`   |
 
 ## Design Decisions
 

@@ -18,14 +18,14 @@ Pi-fleet has three distinct runtime boundaries, each with different testing need
 
 ## Test Layers
 
-| Layer | Scope | Tooling | What They Mock |
-|-------|-------|---------|----------------|
-| Unit (server) | Registry, pod computation, cluster assignment, terminal opener | Vitest | exec (shell commands), file system |
-| Unit (extension) | Activity tracker, session data collector, pod reporter | Vitest | pi.events, HTTP client, process.env |
-| Unit (client stores) | Zustand store logic, filter computation, pod derivation | Vitest | Nothing (pure state) |
-| Component (client) | Individual components in isolation | Vitest + Testing Library | Zustand stores (pre-populated), window.piFleet |
-| Integration (client) | Multi-component flows (sidebar → grid → terminal open) | Vitest + Testing Library | API calls (MSW or fetch mock), SSE stream |
-| E2E | Full app: Electron + server + extension + tmux | Playwright + custom harness | Nothing (real tmux, real extension, real server) |
+| Layer                | Scope                                                          | Tooling                     | What They Mock                                   |
+| -------------------- | -------------------------------------------------------------- | --------------------------- | ------------------------------------------------ |
+| Unit (server)        | Registry, pod computation, cluster assignment, terminal opener | Vitest                      | exec (shell commands), file system               |
+| Unit (extension)     | Activity tracker, session data collector, pod reporter         | Vitest                      | pi.events, HTTP client, process.env              |
+| Unit (client stores) | Zustand store logic, filter computation, pod derivation        | Vitest                      | Nothing (pure state)                             |
+| Component (client)   | Individual components in isolation                             | Vitest + Testing Library    | Zustand stores (pre-populated), window.piFleet   |
+| Integration (client) | Multi-component flows (sidebar → grid → terminal open)         | Vitest + Testing Library    | API calls (MSW or fetch mock), SSE stream        |
+| E2E                  | Full app: Electron + server + extension + tmux                 | Playwright + custom harness | Nothing (real tmux, real extension, real server) |
 
 ## Key Testing Targets (Highest Density)
 
@@ -34,6 +34,7 @@ Pi-fleet has three distinct runtime boundaries, each with different testing need
 Why: highest user-visible impact; multiple failure modes; shell command orchestration.
 
 Test cases:
+
 - Happy path: parse → validate → list-clients (1 client) → switch → activate
 - Pane not found: validate returns false → notification + early return
 - No client: list-clients returns 0 → notification
@@ -48,6 +49,7 @@ Test cases:
 Why: complex state computation; many lifecycle transitions; core data model.
 
 Test cases:
+
 - Single session registers → single-member pod
 - Parent reports ownership → children group under parent
 - Parent dies → children become standalone pods
@@ -63,6 +65,7 @@ Test cases:
 Why: pure function with clear rules; many edge cases in path matching.
 
 Test cases:
+
 - Manual override takes precedence over directory match
 - Longest prefix wins among multiple directory matches
 - Tilde expansion works
@@ -76,6 +79,7 @@ Test cases:
 Why: pure state logic that gates all UI rendering.
 
 Test cases:
+
 - No filters → everything passes
 - Single filter → only matching states pass
 - Multiple filters → OR logic
@@ -88,6 +92,7 @@ Test cases:
 Why: protocol correctness is critical for pod formation.
 
 Test cases:
+
 - Startup: emits request, handles response
 - Signal received: re-requests registry
 - Response received: posts ownership to server
@@ -97,6 +102,7 @@ Test cases:
 ## Manual Smoke Tests
 
 ### Smoke 1: Basic Session Lifecycle
+
 1. Start pi-fleet (`npm run app`)
 2. Open tmux, start a pi session
 3. Verify session appears in sidebar within 5s
@@ -105,6 +111,7 @@ Test cases:
 6. Click session card "Open in terminal": terminal comes to foreground with correct pane
 
 ### Smoke 2: Pod Formation
+
 1. Start a pi session with subagent-orchestrator loaded
 2. Spawn a subagent (e.g., `/subagents spawn`)
 3. Verify child appears nested under parent within 10s
@@ -112,6 +119,7 @@ Test cases:
 5. Kill the parent: verify child becomes standalone pod
 
 ### Smoke 3: Cluster Management
+
 1. Create a cluster "Work" with directory `~/workplace/`
 2. Start a pi session in `~/workplace/my-project/`
 3. Verify session auto-assigns to "Work" cluster
@@ -120,6 +128,7 @@ Test cases:
 6. Delete "Work" cluster: verify confirmation dialog, then cluster disappears
 
 ### Smoke 4: Attention System
+
 1. Start 3 pi sessions
 2. In one session, trigger a tool approval prompt (don't approve)
 3. Verify: pod badge shows "1", cluster badge shows "1"
@@ -128,12 +137,14 @@ Test cases:
 6. Approve the tool: verify badge disappears, notification entry removes
 
 ### Smoke 5: Ghost Mode and Sound
+
 1. Enable ghost mode from tray: verify overlay becomes translucent
 2. Click through the overlay: verify click reaches window below
 3. Enable sound, trigger an idle transition: verify sound plays
 4. Disable sound, trigger another: verify no sound
 
 ### Smoke 6: Drag-and-Drop
+
 1. Create two clusters: "A" and "B"
 2. Start sessions that auto-assign to cluster A
 3. Drag a pod from A to B: verify it moves

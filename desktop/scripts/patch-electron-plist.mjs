@@ -18,20 +18,20 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const plist = resolve(
-  __dirname,
-  "../../node_modules/electron/dist/Electron.app/Contents/Info.plist",
+	__dirname,
+	"../../node_modules/electron/dist/Electron.app/Contents/Info.plist",
 );
 
 if (!existsSync(plist)) {
-  console.log("[patch-electron-plist] Electron.app not found, skipping.");
-  process.exit(0);
+	console.log("[patch-electron-plist] Electron.app not found, skipping.");
+	process.exit(0);
 }
 
 try {
-  execSync(
-    `/usr/libexec/PlistBuddy -c "Add :LSUIElement bool true" "${plist}" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :LSUIElement true" "${plist}"`,
-  );
-  console.log("[patch-electron-plist] LSUIElement: true applied.");
+	execSync(
+		`/usr/libexec/PlistBuddy -c "Add :LSUIElement bool true" "${plist}" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :LSUIElement true" "${plist}"`,
+	);
+	console.log("[patch-electron-plist] LSUIElement: true applied.");
 } catch {
-  console.warn("[patch-electron-plist] Failed to patch plist (non-macOS?).");
+	console.warn("[patch-electron-plist] Failed to patch plist (non-macOS?).");
 }

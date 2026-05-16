@@ -47,6 +47,7 @@ Initialize the `~/Documents/pi-fleet/` monorepo by forking pi-watch's structure.
 ### Changes
 
 **Files created:**
+
 - `.gitignore`: standard ignores for node_modules, dist, .turbo, coverage
 - `package.json`: monorepo root with npm workspaces, turbo, eslint devDeps
 - `turbo.json`: build/test/dev task config

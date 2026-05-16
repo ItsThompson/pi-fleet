@@ -3,11 +3,11 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 const PI_WATCH_EXTENSION_PATH = join(
-  homedir(),
-  ".pi",
-  "agent",
-  "extensions",
-  "pi-watch",
+	homedir(),
+	".pi",
+	"agent",
+	"extensions",
+	"pi-watch",
 );
 
 /**
@@ -16,6 +16,6 @@ const PI_WATCH_EXTENSION_PATH = join(
  * compete for the same port and register duplicate sessions.
  */
 export function detectPiWatch(extensionPath?: string): boolean {
-  const checkPath = extensionPath ?? PI_WATCH_EXTENSION_PATH;
-  return existsSync(checkPath);
+	const checkPath = extensionPath ?? PI_WATCH_EXTENSION_PATH;
+	return existsSync(checkPath);
 }

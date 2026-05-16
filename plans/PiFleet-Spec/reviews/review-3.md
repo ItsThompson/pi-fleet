@@ -8,20 +8,20 @@
 
 ## 1. Acceptance Criteria Audit
 
-| # | Criterion | Status | Notes |
-|---|-----------|--------|-------|
-| 1 | `POST /api/sessions/register` validates with Zod, stores, emits `session:added`, returns 201 | ✅ Met | Verified via `server.test.ts` and route code |
-| 2 | `POST /api/sessions/:id/heartbeat` merges all fields, emits `session:updated`, returns 200 | ✅ Met | All optional fields merged; tested explicitly |
-| 3 | `POST /api/sessions/:id/unregister` removes, emits `session:removed`, 200/404 | ✅ Met | |
-| 4 | `GET /api/sessions` returns full session list | ✅ Met | |
-| 5 | `GET /api/events` SSE stream with `connected` event + broadcasts | ✅ Met | Integration test in `sse.test.ts` |
-| 6 | SSE keep-alive heartbeat every 30s | ✅ Met | Uses `SSE_KEEPALIVE_MS` constant; timer set up in `routes/events.ts:24` |
-| 7 | Session reaper removes stale sessions (15s) | ✅ Met | Tested with injectable clock |
-| 8 | `GET /api/health` returns status, uptime, sessions, pods, version | ✅ Met | |
-| 9 | Port conflict: clear error on busy port | ✅ Met | Tested in `sse.test.ts` |
-| 10 | Structured JSON logging to `~/Library/Logs/PiFleet/pi-fleet.log` | ✅ Met | `utils/logger.ts` appends to correct path |
-| 11 | Unit tests for SessionRegistry | ✅ Met | 15 tests covering register, heartbeat merge, reap, duplicate |
-| 12 | Unit tests for Zod schemas | ✅ Met | 18 tests covering valid/invalid payloads |
+| #   | Criterion                                                                                    | Status | Notes                                                                   |
+| --- | -------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------- |
+| 1   | `POST /api/sessions/register` validates with Zod, stores, emits `session:added`, returns 201 | ✅ Met | Verified via `server.test.ts` and route code                            |
+| 2   | `POST /api/sessions/:id/heartbeat` merges all fields, emits `session:updated`, returns 200   | ✅ Met | All optional fields merged; tested explicitly                           |
+| 3   | `POST /api/sessions/:id/unregister` removes, emits `session:removed`, 200/404                | ✅ Met |                                                                         |
+| 4   | `GET /api/sessions` returns full session list                                                | ✅ Met |                                                                         |
+| 5   | `GET /api/events` SSE stream with `connected` event + broadcasts                             | ✅ Met | Integration test in `sse.test.ts`                                       |
+| 6   | SSE keep-alive heartbeat every 30s                                                           | ✅ Met | Uses `SSE_KEEPALIVE_MS` constant; timer set up in `routes/events.ts:24` |
+| 7   | Session reaper removes stale sessions (15s)                                                  | ✅ Met | Tested with injectable clock                                            |
+| 8   | `GET /api/health` returns status, uptime, sessions, pods, version                            | ✅ Met |                                                                         |
+| 9   | Port conflict: clear error on busy port                                                      | ✅ Met | Tested in `sse.test.ts`                                                 |
+| 10  | Structured JSON logging to `~/Library/Logs/PiFleet/pi-fleet.log`                             | ✅ Met | `utils/logger.ts` appends to correct path                               |
+| 11  | Unit tests for SessionRegistry                                                               | ✅ Met | 15 tests covering register, heartbeat merge, reap, duplicate            |
+| 12  | Unit tests for Zod schemas                                                                   | ✅ Met | 18 tests covering valid/invalid payloads                                |
 
 All 12 acceptance criteria are met.
 
@@ -93,16 +93,20 @@ Tests assert meaningful outcomes, cover edge cases, and don't use weak assertion
 ### 🟡 Should Fix
 
 **1. Heartbeat route doesn't validate session ID consistency**
+
 - **File:** `server/src/routes/sessions.ts:34-49`
 - **Problem:** The heartbeat route takes `:id` from the URL params but uses `result.data.sessionId` from the body for the registry lookup (via `registry.heartbeat(result.data)`). If the URL param `id` differs from the body's `sessionId`, the route silently uses the body's value. This could confuse API consumers.
 - **Suggested fix:** Either validate that `request.params.id === result.data.sessionId` and return 400 on mismatch, or remove `sessionId` from the body and take it from the URL param. The spec shows `sessionId` in the body, so validation is the safer fix:
   ```typescript
   if (request.params.id !== result.data.sessionId) {
-    return reply.status(400).send({ error: "URL param and body sessionId mismatch" });
+  	return reply
+  		.status(400)
+  		.send({ error: "URL param and body sessionId mismatch" });
   }
   ```
 
 **2. EventBus `broadcast` silently removes clients on error without logging**
+
 - **File:** `server/src/event-bus.ts:28-33`
 - **Problem:** When a client's `send()` throws, the client is removed from the map without any logging. This is correct for resilience but makes it hard to debug connection issues.
 - **Suggested fix:** Add a debug-level log entry when a client is removed due to error.
@@ -110,11 +114,13 @@ Tests assert meaningful outcomes, cover edge cases, and don't use weak assertion
 ### 🟢 Nits
 
 **3. `data: {} as Record<string, never>` for heartbeat SSE event**
+
 - **File:** `server/src/routes/events.ts:26`
 - **Problem:** The cast `as Record<string, never>` is a type assertion to satisfy the `SSEEvent` union for the heartbeat type. It's not incorrect but is slightly noisy.
 - **Note:** This is a consequence of the shared type definition (`data: Record<string, never>`) which requires an empty object. The cast is harmless and the simplest approach given the type constraint.
 
 **4. Version hardcoded in health route**
+
 - **File:** `server/src/routes/health.ts:14`
 - **Problem:** `version: "0.1.0"` is hardcoded rather than read from `package.json`.
 - **Note:** Acceptable for now. A future ticket could inject the version at build time.

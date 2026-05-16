@@ -5,8 +5,8 @@ import type { ActivityStatus } from "./types/session.js";
  * the session requires human intervention to proceed.
  */
 export const ATTENTION_STATES: ReadonlySet<ActivityStatus> = new Set([
-  "pending_approval",
-  "idle",
+	"pending_approval",
+	"idle",
 ]);
 
 /**
@@ -14,5 +14,5 @@ export const ATTENTION_STATES: ReadonlySet<ActivityStatus> = new Set([
  * This is the single source of truth for the attention classification.
  */
 export function isAttentionState(status: ActivityStatus): boolean {
-  return ATTENTION_STATES.has(status);
+	return ATTENTION_STATES.has(status);
 }

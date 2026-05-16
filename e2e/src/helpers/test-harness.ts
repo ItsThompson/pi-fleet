@@ -4,9 +4,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 export interface TestHarness {
-  server: PiFleetServer;
-  baseUrl: string;
-  cleanup: () => Promise<void>;
+	server: PiFleetServer;
+	baseUrl: string;
+	cleanup: () => Promise<void>;
 }
 
 /**
@@ -14,29 +14,29 @@ export interface TestHarness {
  * Call cleanup() when done to tear down.
  */
 export async function createTestHarness(): Promise<TestHarness> {
-  const tempDir = mkdtempSync(join(tmpdir(), "pi-fleet-e2e-"));
-  const configPath = join(tempDir, "clusters.json");
+	const tempDir = mkdtempSync(join(tmpdir(), "pi-fleet-e2e-"));
+	const configPath = join(tempDir, "clusters.json");
 
-  const server = createServer({
-    port: 0,
-    host: "127.0.0.1",
-    configPath,
-  });
+	const server = createServer({
+		port: 0,
+		host: "127.0.0.1",
+		configPath,
+	});
 
-  await server.start();
+	await server.start();
 
-  const address = server.app.server.address();
-  const port = typeof address === "object" && address ? address.port : 0;
-  const baseUrl = `http://127.0.0.1:${port}`;
+	const address = server.app.server.address();
+	const port = typeof address === "object" && address ? address.port : 0;
+	const baseUrl = `http://127.0.0.1:${port}`;
 
-  async function cleanup(): Promise<void> {
-    await server.stop();
-    try {
-      rmSync(tempDir, { recursive: true, force: true });
-    } catch {
-      // Best-effort cleanup
-    }
-  }
+	async function cleanup(): Promise<void> {
+		await server.stop();
+		try {
+			rmSync(tempDir, { recursive: true, force: true });
+		} catch {
+			// Best-effort cleanup
+		}
+	}
 
-  return { server, baseUrl, cleanup };
+	return { server, baseUrl, cleanup };
 }

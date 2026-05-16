@@ -2,8 +2,8 @@ import type { PiFleetBridge } from "@pi-fleet/shared";
 
 /** Result of attempting to open a session in the terminal. */
 export interface OpenTerminalResult {
-  ok: boolean;
-  reason?: string;
+	ok: boolean;
+	reason?: string;
 }
 
 /**
@@ -11,7 +11,7 @@ export interface OpenTerminalResult {
  * Returns null in non-Electron contexts (browser dev mode).
  */
 export function getBridge(): PiFleetBridge | null {
-  return window.piFleet ?? null;
+	return window.piFleet ?? null;
 }
 
 /**
@@ -19,7 +19,7 @@ export function getBridge(): PiFleetBridge | null {
  * Returns the bridge URL in Electron, empty string (Vite proxy) in browser.
  */
 export function getServerUrl(): string {
-  return getBridge()?.getServerUrl() ?? "";
+	return getBridge()?.getServerUrl() ?? "";
 }
 
 /**
@@ -28,17 +28,17 @@ export function getServerUrl(): string {
  * Never throws.
  */
 export async function openInTerminal(
-  sessionId: string,
+	sessionId: string,
 ): Promise<OpenTerminalResult> {
-  const bridge = getBridge();
-  if (!bridge) {
-    return { ok: false, reason: "bridge-unavailable" };
-  }
+	const bridge = getBridge();
+	if (!bridge) {
+		return { ok: false, reason: "bridge-unavailable" };
+	}
 
-  try {
-    const result = await bridge.openSession(sessionId);
-    return result;
-  } catch {
-    return { ok: false, reason: "ipc-error" };
-  }
+	try {
+		const result = await bridge.openSession(sessionId);
+		return result;
+	} catch {
+		return { ok: false, reason: "ipc-error" };
+	}
 }

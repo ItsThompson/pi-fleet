@@ -8,19 +8,19 @@
 
 ## 1. Acceptance Criteria Audit
 
-| # | Criterion | Status | Notes |
-|---|-----------|--------|-------|
-| 1 | Smoke 1 (Session Lifecycle): register, sidebar, model+context%, F5, open-terminal | ✅ Met | Server-side registration, listing, metadata, open-terminal, and SSE all verified. F5/overlay are Electron features covered by desktop unit tests. |
-| 2 | Smoke 2 (Pod Formation): subagent spawn, nesting, child death, parent death | ✅ Met | All lifecycle transitions tested including deferred registration. |
-| 3 | Smoke 3 (Cluster Management): create, auto-assign, drag, persistence, delete | ✅ Met | Full CRUD + directory matching + manual override + reorder persistence. |
-| 4 | Smoke 4 (Attention System): badges, cluster sums, approval clears, notification panel | ✅ Met | Pod and cluster attention counts verified. SSE delivers state changes. |
-| 5 | Smoke 5 (Ghost Mode + Sound): translucent, click-through, sound on transition, disable | ✅ Met | Server-side SSE contract tested. Desktop features covered by `desktop/` unit tests (appropriate boundary). |
-| 6 | Smoke 6 (DnD): drag pod between clusters, reorder, persistence | ✅ Met | Assignment endpoint, reorder persistence, SSE broadcast all verified. |
-| 7 | Empty state: zero sessions shows message with extension install hint | ✅ Met | `MainArea.tsx` renders `EmptyState` with symlink command when `sessions.size === 0`. |
-| 8 | Empty state: zero clusters shows only "Unclustered" with "Create Cluster" | ✅ Met | API returns `clusters: [], unclustered: { podIds: [] }`. Client sidebar renders "Create Cluster" button (from ticket #8 implementation). |
-| 9 | pi-watch detected: non-blocking notice suggests removal | ✅ Met | `PiWatchNotice` in Header.tsx, dismissable, shows removal command. |
-| 10 | Extension setup: empty state includes symlink command | ✅ Met | `EmptyState` component includes full symlink command and "No restart required" note. |
-| 11 | All E2E tests pass in CI-compatible configuration | ✅ Met | vitest with server-level tests: no browser, no tmux, no Electron required. 42 tests pass. |
+| #   | Criterion                                                                              | Status | Notes                                                                                                                                             |
+| --- | -------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Smoke 1 (Session Lifecycle): register, sidebar, model+context%, F5, open-terminal      | ✅ Met | Server-side registration, listing, metadata, open-terminal, and SSE all verified. F5/overlay are Electron features covered by desktop unit tests. |
+| 2   | Smoke 2 (Pod Formation): subagent spawn, nesting, child death, parent death            | ✅ Met | All lifecycle transitions tested including deferred registration.                                                                                 |
+| 3   | Smoke 3 (Cluster Management): create, auto-assign, drag, persistence, delete           | ✅ Met | Full CRUD + directory matching + manual override + reorder persistence.                                                                           |
+| 4   | Smoke 4 (Attention System): badges, cluster sums, approval clears, notification panel  | ✅ Met | Pod and cluster attention counts verified. SSE delivers state changes.                                                                            |
+| 5   | Smoke 5 (Ghost Mode + Sound): translucent, click-through, sound on transition, disable | ✅ Met | Server-side SSE contract tested. Desktop features covered by `desktop/` unit tests (appropriate boundary).                                        |
+| 6   | Smoke 6 (DnD): drag pod between clusters, reorder, persistence                         | ✅ Met | Assignment endpoint, reorder persistence, SSE broadcast all verified.                                                                             |
+| 7   | Empty state: zero sessions shows message with extension install hint                   | ✅ Met | `MainArea.tsx` renders `EmptyState` with symlink command when `sessions.size === 0`.                                                              |
+| 8   | Empty state: zero clusters shows only "Unclustered" with "Create Cluster"              | ✅ Met | API returns `clusters: [], unclustered: { podIds: [] }`. Client sidebar renders "Create Cluster" button (from ticket #8 implementation).          |
+| 9   | pi-watch detected: non-blocking notice suggests removal                                | ✅ Met | `PiWatchNotice` in Header.tsx, dismissable, shows removal command.                                                                                |
+| 10  | Extension setup: empty state includes symlink command                                  | ✅ Met | `EmptyState` component includes full symlink command and "No restart required" note.                                                              |
+| 11  | All E2E tests pass in CI-compatible configuration                                      | ✅ Met | vitest with server-level tests: no browser, no tmux, no Electron required. 42 tests pass.                                                         |
 
 ---
 
@@ -139,6 +139,7 @@ All 11 acceptance criteria are met. The E2E suite provides genuine integration c
 The SSE duplication (§4.1) and missing unit test for `detectPiWatch` (§4.2) are quality improvements worth addressing but do not block merge.
 
 **What was done well:**
+
 - Pragmatic scope: testing server contracts rather than fighting Electron/tmux in CI
 - MockSession class: deterministic, programmatic, no flaky timers
 - Comprehensive coverage of all lifecycle edge cases (deferred registration, parent death promotion, cluster deletion cascade)

@@ -4,16 +4,16 @@ import type { ActivityStatus } from "@pi-fleet/shared";
 import type { ConfigManager } from "./config.js";
 
 export interface SoundManager {
-  /**
-   * Check if a session state transition should trigger a sound.
-   * Deduplicates: only fires once per session per transition (not on heartbeat repeats).
-   */
-  handleStateChange(sessionId: string, activity: string): void;
-  dispose(): void;
+	/**
+	 * Check if a session state transition should trigger a sound.
+	 * Deduplicates: only fires once per session per transition (not on heartbeat repeats).
+	 */
+	handleStateChange(sessionId: string, activity: string): void;
+	dispose(): void;
 }
 
 export interface SoundManagerDeps {
-  configManager: ConfigManager;
+	configManager: ConfigManager;
 }
 
 /**
@@ -22,35 +22,38 @@ export interface SoundManagerDeps {
  * on heartbeat confirmations.
  */
 export function createSoundManager(deps: SoundManagerDeps): SoundManager {
-  const { configManager } = deps;
-  /** Map of sessionId → last reported activity state */
-  const lastState = new Map<string, string>();
+	const { configManager } = deps;
+	/** Map of sessionId → last reported activity state */
+	const lastState = new Map<string, string>();
 
-  function handleStateChange(sessionId: string, activity: string): void {
-    const config = configManager.get();
-    if (!config.preferences.soundEnabled) return;
+	function handleStateChange(sessionId: string, activity: string): void {
+		const config = configManager.get();
+		if (!config.preferences.soundEnabled) return;
 
-    const previousState = lastState.get(sessionId);
-    lastState.set(sessionId, activity);
+		const previousState = lastState.get(sessionId);
+		lastState.set(sessionId, activity);
 
-    // Only fire on transition INTO an attention state
-    // (not when staying in the same state on repeated heartbeats)
-    if (isAttentionState(activity as ActivityStatus) && previousState !== activity) {
-      playSound();
-    }
-  }
+		// Only fire on transition INTO an attention state
+		// (not when staying in the same state on repeated heartbeats)
+		if (
+			isAttentionState(activity as ActivityStatus) &&
+			previousState !== activity
+		) {
+			playSound();
+		}
+	}
 
-  function playSound(): void {
-    // shell.beep() is the simplest cross-platform alert sound
-    shell.beep();
-  }
+	function playSound(): void {
+		// shell.beep() is the simplest cross-platform alert sound
+		shell.beep();
+	}
 
-  function dispose(): void {
-    lastState.clear();
-  }
+	function dispose(): void {
+		lastState.clear();
+	}
 
-  return {
-    handleStateChange,
-    dispose,
-  };
+	return {
+		handleStateChange,
+		dispose,
+	};
 }

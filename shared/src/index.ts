@@ -3,11 +3,11 @@ export type { PiFleetBridge } from "./types/bridge.js";
 
 // Types: session
 export type {
-  ActivityStatus,
-  ContextUsagePayload,
-  RegisterBody,
-  HeartbeatBody,
-  RegisteredSession,
+	ActivityStatus,
+	ContextUsagePayload,
+	RegisterBody,
+	HeartbeatBody,
+	RegisteredSession,
 } from "./types/session.js";
 
 // Types: pod
@@ -25,9 +25,9 @@ export type { SSEEvent } from "./types/events.js";
 
 // Types: terminal
 export type {
-  TmuxTarget,
-  OpenResult,
-  OpenFailureReason,
+	TmuxTarget,
+	OpenResult,
+	OpenFailureReason,
 } from "./types/terminal.js";
 
 // Attention domain
@@ -35,16 +35,12 @@ export { ATTENTION_STATES, isAttentionState } from "./attention.js";
 
 // Constants
 export {
-  SERVER_PORT,
-  HEARTBEAT_INTERVAL_MS,
-  REAP_TIMEOUT_MS,
-  SSE_KEEPALIVE_MS,
-  UNCLUSTERED_ID,
+	SERVER_PORT,
+	HEARTBEAT_INTERVAL_MS,
+	REAP_TIMEOUT_MS,
+	SSE_KEEPALIVE_MS,
+	UNCLUSTERED_ID,
 } from "./constants.js";
 
 // Path utilities
-export {
-  getConfigDir,
-  getConfigPath,
-  getLogPath,
-} from "./paths.js";
+export { getConfigDir, getConfigPath, getLogPath } from "./paths.js";

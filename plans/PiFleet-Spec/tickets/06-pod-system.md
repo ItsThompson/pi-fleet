@@ -61,6 +61,7 @@ Implement pod computation on the server and the inter-extension protocol in the 
 ### Changes
 
 **Files created:**
+
 - `server/src/pod-registry.ts`: PodRegistry class with ownership map, pod computation, lifecycle event emission
 - `server/src/pod-registry.test.ts`: 20 unit tests covering all lifecycle transitions
 - `server/src/routes/pods.ts`: GET /api/pods and POST /api/pods/ownership route handlers
@@ -69,6 +70,7 @@ Implement pod computation on the server and the inter-extension protocol in the 
 - `extension/src/pod-reporter.test.ts`: 7 unit tests for inter-extension protocol
 
 **Files modified:**
+
 - `server/src/server.ts`: Added PodRegistry instantiation, pod event bridge to EventBus, session re-evaluation on register/remove
 - `server/src/schemas.ts`: Added ownershipBodySchema for POST /api/pods/ownership validation
 - `server/src/routes/health.ts`: Updated to accept PodRegistry and return real pod count
@@ -87,6 +89,7 @@ Implement pod computation on the server and the inter-extension protocol in the 
 ### Test Results
 
 Server (91 tests):
+
 ```
  Test Files  8 passed (8)
       Tests  91 passed (91)
@@ -94,6 +97,7 @@ Server (91 tests):
 ```
 
 Extension (85 tests):
+
 ```
  Test Files  6 passed (6)
       Tests  85 passed (85)

@@ -6,15 +6,15 @@ The terminal opener is the highest-priority fix in this epic. It handles the ful
 
 ## Current Issues (from pi-watch)
 
-| # | Severity | Issue | Root Cause |
-|---|----------|-------|-----------|
-| 1 | Critical | No window activation after tmux switch | Missing `osascript` or process activation call |
-| 2 | Critical | `list-clients` unscoped | Counts ALL clients on tmux server, not just target session's |
-| 3 | Medium | Regex mismatch between extension and desktop parsers | Extension uses `#S:#I.#P`, desktop regex expects `(.+):(\d+)\.(\d+)` |
-| 4 | Medium | `lastKnownTmuxTarget` fallback persists stale targets | Never cleared on switch failure |
-| 5 | Medium | 5-second staleness window with no retry | Single attempt, no feedback |
-| 6 | Medium | No tmux server/socket targeting | Only works with default tmux server |
-| 7 | Medium | No pane existence validation | Attempts switch to potentially dead panes |
+| #   | Severity | Issue                                                 | Root Cause                                                           |
+| --- | -------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| 1   | Critical | No window activation after tmux switch                | Missing `osascript` or process activation call                       |
+| 2   | Critical | `list-clients` unscoped                               | Counts ALL clients on tmux server, not just target session's         |
+| 3   | Medium   | Regex mismatch between extension and desktop parsers  | Extension uses `#S:#I.#P`, desktop regex expects `(.+):(\d+)\.(\d+)` |
+| 4   | Medium   | `lastKnownTmuxTarget` fallback persists stale targets | Never cleared on switch failure                                      |
+| 5   | Medium   | 5-second staleness window with no retry               | Single attempt, no feedback                                          |
+| 6   | Medium   | No tmux server/socket targeting                       | Only works with default tmux server                                  |
+| 7   | Medium   | No pane existence validation                          | Attempts switch to potentially dead panes                            |
 
 ## Architecture
 
@@ -69,6 +69,7 @@ The opener needs to activate the correct terminal application. Strategy:
 ```
 
 Alternative (simpler, covers 90% of cases):
+
 ```
 1. From tmux list-clients -t <session> -F "#{client_tty}"
 2. Check known terminal apps in order: iTerm2, Terminal.app, Alacritty, Kitty, WezTerm
@@ -79,30 +80,31 @@ Alternative (simpler, covers 90% of cases):
 
 ```typescript
 interface TmuxTarget {
-  session: string;
-  window: string;
-  pane: string;
+	session: string;
+	window: string;
+	pane: string;
 }
 
-type OpenResult =
-  | { ok: true }
-  | { ok: false; reason: OpenFailureReason };
+type OpenResult = { ok: true } | { ok: false; reason: OpenFailureReason };
 
 type OpenFailureReason =
-  | "not-in-tmux"
-  | "invalid-target"
-  | "pane-not-found"
-  | "no-server"
-  | "no-client"
-  | "multi-client"
-  | "switch-failed"
-  | "activation-failed";
+	| "not-in-tmux"
+	| "invalid-target"
+	| "pane-not-found"
+	| "no-server"
+	| "no-client"
+	| "multi-client"
+	| "switch-failed"
+	| "activation-failed";
 
 interface TerminalOpenerDeps {
-  /** Execute a shell command. Injected for testability. */
-  exec: (cmd: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;
-  /** Show a system notification. Injected for testability. */
-  notify: (title: string, body: string) => void;
+	/** Execute a shell command. Injected for testability. */
+	exec: (
+		cmd: string,
+		args: string[],
+	) => Promise<{ stdout: string; stderr: string }>;
+	/** Show a system notification. Injected for testability. */
+	notify: (title: string, body: string) => void;
 }
 ```
 
@@ -114,29 +116,38 @@ After successful `tmux switch-client`, run:
 
 ```typescript
 async function activateTerminal(exec: ExecFn): Promise<boolean> {
-  // Detect which terminal app owns the tmux client
-  const terminalApp = await detectTerminalApp(exec);
-  if (!terminalApp) return false;
+	// Detect which terminal app owns the tmux client
+	const terminalApp = await detectTerminalApp(exec);
+	if (!terminalApp) return false;
 
-  await exec("osascript", [
-    "-e", `tell application "${terminalApp}" to activate`
-  ]);
-  return true;
+	await exec("osascript", [
+		"-e",
+		`tell application "${terminalApp}" to activate`,
+	]);
+	return true;
 }
 ```
 
 ### Fix 2: Scoped list-clients
 
 Replace:
+
 ```typescript
 // BEFORE (broken): counts all clients on the entire tmux server
 await exec("tmux", ["list-clients", "-F", "#{client_name}"]);
 ```
 
 With:
+
 ```typescript
 // AFTER: scoped to target session only
-await exec("tmux", ["list-clients", "-t", target.session, "-F", "#{client_name}"]);
+await exec("tmux", [
+	"list-clients",
+	"-t",
+	target.session,
+	"-F",
+	"#{client_name}",
+]);
 ```
 
 ### Fix 3: Regex alignment
@@ -154,21 +165,30 @@ const TARGET_RE = /^(.+):(.+)\.(\d+)$/;
 Before switching, verify the target exists:
 
 ```typescript
-async function validatePane(target: TmuxTarget, exec: ExecFn): Promise<boolean> {
-  const fullTarget = `${target.session}:${target.window}.${target.pane}`;
-  const { code } = await exec("tmux", ["display-message", "-t", fullTarget, "-p", ""]);
-  return code === 0;
+async function validatePane(
+	target: TmuxTarget,
+	exec: ExecFn,
+): Promise<boolean> {
+	const fullTarget = `${target.session}:${target.window}.${target.pane}`;
+	const { code } = await exec("tmux", [
+		"display-message",
+		"-t",
+		fullTarget,
+		"-p",
+		"",
+	]);
+	return code === 0;
 }
 ```
 
 ## Error Handling
 
-| Failure Mode | User-Facing Behavior |
-|-------------|---------------------|
-| No tmux target on session | Notification: "Session was not started inside tmux" |
-| Pane no longer exists | Notification: "Pane no longer exists"; clear stale target from registry |
-| No tmux server | Notification: "tmux server not running" |
-| No client on target session | Notification: "No terminal attached to session 'X'" |
-| Multiple clients | Notification: "Multiple terminals on session 'X'; detach extras" |
-| Switch command fails | Notification: "tmux switch failed: <stderr>" |
-| Terminal activation fails | Notification: "Could not bring terminal to foreground" (non-fatal: tmux switch still succeeded) |
+| Failure Mode                | User-Facing Behavior                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| No tmux target on session   | Notification: "Session was not started inside tmux"                                             |
+| Pane no longer exists       | Notification: "Pane no longer exists"; clear stale target from registry                         |
+| No tmux server              | Notification: "tmux server not running"                                                         |
+| No client on target session | Notification: "No terminal attached to session 'X'"                                             |
+| Multiple clients            | Notification: "Multiple terminals on session 'X'; detach extras"                                |
+| Switch command fails        | Notification: "tmux switch failed: <stderr>"                                                    |
+| Terminal activation fails   | Notification: "Could not bring terminal to foreground" (non-fatal: tmux switch still succeeded) |

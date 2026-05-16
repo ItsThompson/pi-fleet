@@ -60,6 +60,7 @@ Implement drag-and-drop for two operations: pod reassignment between clusters, a
 ### Changes
 
 **Files created:**
+
 - `client/src/components/dnd/types.ts`: Discriminated union types for drag data (PodDragData, ClusterDragData)
 - `client/src/components/dnd/DndContext.tsx`: DnD provider with sensors, event handlers for pod assignment and cluster reorder
 - `client/src/components/dnd/DraggablePod.tsx`: useDraggable wrapper for pod rows
@@ -73,6 +74,7 @@ Implement drag-and-drop for two operations: pod reassignment between clusters, a
 - `client/src/components/dnd/DndApi.test.tsx`: API handler logic tests (6 tests)
 
 **Files modified:**
+
 - `client/package.json`: Added @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities
 - `client/src/components/layout/Sidebar.tsx`: Wrapped with DndProvider, SortableContext, DroppableCluster, SortableCluster
 - `client/src/components/clusters/ClusterSection.tsx`: Wrapped pod rows with DraggablePod

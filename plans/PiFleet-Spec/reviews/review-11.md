@@ -8,22 +8,22 @@
 
 ## 1. Acceptance Criteria Audit
 
-| # | Criterion | Status | Notes |
-|---|-----------|--------|-------|
-| 1 | App launches as menu-bar overlay anchored to tray icon (top-right on macOS) | ✅ Met | `getAnchorPosition()` calculates x = screenWidth - width - 12, y = 0. `alwaysOnTop: true`, `skipTaskbar: true`, `frame: false`. |
-| 2 | F5 global shortcut toggles overlay visibility | ✅ Met | `globalShortcut.register("F5", ...)` in `main.ts` with failure notification fallback. |
-| 3 | Window dimensions: 420x680 default, min 360x400, max 600x900, vertically resizable | ✅ Met | `WINDOW_DEFAULTS` matches spec. `resizable: true`. |
-| 4 | Ghost mode: translucent (configurable opacity, default 0.3) + click-through | ✅ Met | `setIgnoreMouseEvents(true, { forward: true })` + `setOpacity(opacity)`. Default opacity 0.3. |
-| 5 | Ghost mode toggled via tray menu; persists across restarts | ✅ Met | Tray checkbox calls `windowManager.setGhostMode()` which calls `configManager.set("ghostMode", ...)`. Config loaded on startup. |
-| 6 | Tray menu items: Show/Hide, Ghost Mode toggle, Sound toggle, Quit | ✅ Met | All four items present in `tray.ts` menu template with correct types (checkbox for toggles). |
-| 7 | Sound plays on transition to `pending_approval` or `idle` (once per transition) | ✅ Met | `SoundManager.handleStateChange` fires only when `ATTENTION_STATES.has(activity) && previousState !== activity`. |
-| 8 | Sound togglable via tray menu; preference persists | ✅ Met | Tray checkbox for Sound calls `configManager.set("soundEnabled", ...)`. |
-| 9 | Config stored in `~/Library/Application Support/PiFleet/config.json` with `version: 1` | ✅ Met | Uses `getConfigPath()` from shared, schema has `version: 1`. |
-| 10 | Preload exposes `window.piFleet`: all 6 methods | ✅ Met | `contextBridge.exposeInMainWorld("piFleet", {...})` with all required methods. |
-| 11 | `contextIsolation: true`, `nodeIntegration: false` | ✅ Met | Explicitly set in `webPreferences`. Test verifies this. |
-| 12 | Embedded server starts before window loads; port conflict shows "Retry" dialog | ✅ Met | `server.start()` called before `windowManager.createWindow()`. Dialog with Retry/Quit buttons. |
-| 13 | Port conflict error identifies likely cause | ✅ Met | Detail string: "Another instance of pi-fleet or pi-watch may be running" |
-| 14 | App remains open on port conflict; Retry re-attempts bind | ✅ Met | `attemptStart` recurses via `handlePortConflict`. App doesn't crash: tray is created for graceful quit. |
+| #   | Criterion                                                                              | Status | Notes                                                                                                                           |
+| --- | -------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | App launches as menu-bar overlay anchored to tray icon (top-right on macOS)            | ✅ Met | `getAnchorPosition()` calculates x = screenWidth - width - 12, y = 0. `alwaysOnTop: true`, `skipTaskbar: true`, `frame: false`. |
+| 2   | F5 global shortcut toggles overlay visibility                                          | ✅ Met | `globalShortcut.register("F5", ...)` in `main.ts` with failure notification fallback.                                           |
+| 3   | Window dimensions: 420x680 default, min 360x400, max 600x900, vertically resizable     | ✅ Met | `WINDOW_DEFAULTS` matches spec. `resizable: true`.                                                                              |
+| 4   | Ghost mode: translucent (configurable opacity, default 0.3) + click-through            | ✅ Met | `setIgnoreMouseEvents(true, { forward: true })` + `setOpacity(opacity)`. Default opacity 0.3.                                   |
+| 5   | Ghost mode toggled via tray menu; persists across restarts                             | ✅ Met | Tray checkbox calls `windowManager.setGhostMode()` which calls `configManager.set("ghostMode", ...)`. Config loaded on startup. |
+| 6   | Tray menu items: Show/Hide, Ghost Mode toggle, Sound toggle, Quit                      | ✅ Met | All four items present in `tray.ts` menu template with correct types (checkbox for toggles).                                    |
+| 7   | Sound plays on transition to `pending_approval` or `idle` (once per transition)        | ✅ Met | `SoundManager.handleStateChange` fires only when `ATTENTION_STATES.has(activity) && previousState !== activity`.                |
+| 8   | Sound togglable via tray menu; preference persists                                     | ✅ Met | Tray checkbox for Sound calls `configManager.set("soundEnabled", ...)`.                                                         |
+| 9   | Config stored in `~/Library/Application Support/PiFleet/config.json` with `version: 1` | ✅ Met | Uses `getConfigPath()` from shared, schema has `version: 1`.                                                                    |
+| 10  | Preload exposes `window.piFleet`: all 6 methods                                        | ✅ Met | `contextBridge.exposeInMainWorld("piFleet", {...})` with all required methods.                                                  |
+| 11  | `contextIsolation: true`, `nodeIntegration: false`                                     | ✅ Met | Explicitly set in `webPreferences`. Test verifies this.                                                                         |
+| 12  | Embedded server starts before window loads; port conflict shows "Retry" dialog         | ✅ Met | `server.start()` called before `windowManager.createWindow()`. Dialog with Retry/Quit buttons.                                  |
+| 13  | Port conflict error identifies likely cause                                            | ✅ Met | Detail string: "Another instance of pi-fleet or pi-watch may be running"                                                        |
+| 14  | App remains open on port conflict; Retry re-attempts bind                              | ✅ Met | `attemptStart` recurses via `handlePortConflict`. App doesn't crash: tray is created for graceful quit.                         |
 
 **All 14 acceptance criteria met.**
 
@@ -73,15 +73,15 @@ Strong implementation with clean module boundaries, proper dependency injection,
 
 ### Coverage
 
-| Module | Test file | Tests | Assessment |
-|--------|-----------|-------|-----------|
-| `config.ts` | `config.test.ts` | 11 | ✅ Thorough: load, save, manager, migration, edge cases |
-| `window.ts` | `window.test.ts` | 10 | ✅ Good: dimensions, positioning, ghost mode, visibility, security |
-| `sound.ts` | `sound.test.ts` | 9 | ✅ Excellent: dedup logic, transitions, per-session tracking, disabled state |
-| `server.ts` | `server.test.ts` | 6 | ✅ Good: startup, port conflict, retry, generic errors, stop |
-| `tray.ts` | _(none)_ | 0 | 🟡 Missing tests (see Issues) |
-| `preload.ts` | _(none)_ | 0 | Acceptable: thin bridge, hard to unit-test in isolation |
-| `main.ts` | _(none)_ | 0 | Acceptable: composition root, tested via integration |
+| Module       | Test file        | Tests | Assessment                                                                   |
+| ------------ | ---------------- | ----- | ---------------------------------------------------------------------------- |
+| `config.ts`  | `config.test.ts` | 11    | ✅ Thorough: load, save, manager, migration, edge cases                      |
+| `window.ts`  | `window.test.ts` | 10    | ✅ Good: dimensions, positioning, ghost mode, visibility, security           |
+| `sound.ts`   | `sound.test.ts`  | 9     | ✅ Excellent: dedup logic, transitions, per-session tracking, disabled state |
+| `server.ts`  | `server.test.ts` | 6     | ✅ Good: startup, port conflict, retry, generic errors, stop                 |
+| `tray.ts`    | _(none)_         | 0     | 🟡 Missing tests (see Issues)                                                |
+| `preload.ts` | _(none)_         | 0     | Acceptable: thin bridge, hard to unit-test in isolation                      |
+| `main.ts`    | _(none)_         | 0     | Acceptable: composition root, tested via integration                         |
 
 ### Strengths
 
@@ -102,24 +102,28 @@ Strong implementation with clean module boundaries, proper dependency injection,
 ### 🟡 Should Fix
 
 **4.1: No unit tests for `tray.ts`**
+
 - **File:** `desktop/src/tray.ts`
 - **Problem:** The tray module contains non-trivial logic: menu construction with dynamic Show/Hide label, checkbox state from config, click handlers that wire to other managers. Zero test coverage.
 - **Impact:** Regressions in menu wiring (e.g., ghost mode checkbox not calling `setGhostMode`) would go undetected.
 - **Fix:** Add `tray.test.ts` with mocked Electron `Tray`/`Menu` verifying: menu template structure, click handlers invoke correct methods, updateMenu reflects current state.
 
 **4.2: Preload hardcodes server port instead of using shared constant**
+
 - **File:** `desktop/src/preload.ts`, line 43
 - **Problem:** `getServerUrl()` returns a hardcoded string `http://127.0.0.1:8314` rather than importing `SERVER_PORT` from `@pi-fleet/shared`.
 - **Impact:** If `SERVER_PORT` changes in shared, preload will be out of sync. Violates single source of truth.
 - **Fix:** Import `SERVER_PORT` from `@pi-fleet/shared` and use it: `return \`http://127.0.0.1:${SERVER_PORT}\``.
 
 **4.3: SoundManager `lastState` map grows unbounded**
+
 - **File:** `desktop/src/sound.ts`, line 31
 - **Problem:** Sessions are tracked in `lastState` map but never removed when a session unregisters. Over a long-running app lifetime with many sessions, this map grows indefinitely.
 - **Impact:** Minor memory leak. Unlikely to be problematic in practice (sessions are lightweight strings), but violates clean resource management.
 - **Fix:** Add a `removeSession(sessionId: string)` method and wire it to the `session:removed` event in `main.ts`'s `wireSessionSoundAlerts`.
 
 **4.4: ConfigManager `set()` accepts any value type without validation**
+
 - **File:** `desktop/src/config.ts`, line 80
 - **Problem:** `set(key: string, value: unknown)` only checks the key exists in `preferences` but doesn't validate the value type. Callers could store `"banana"` for `ghostOpacity` (a number field) or `42` for `ghostMode` (a boolean field).
 - **Impact:** Invalid config values could persist to disk and cause runtime errors on next load (though `loadConfig` would fall back to defaults on parse failure).
@@ -128,17 +132,20 @@ Strong implementation with clean module boundaries, proper dependency injection,
 ### 🟢 Nit
 
 **4.5: Window positioning assumes menu bar is at top**
+
 - **File:** `desktop/src/window.ts`, line 34
 - **Problem:** `y: 0` works on macOS (menu bar at top), but the comment says "anchored near tray" without accounting for menu bar height (~25px). Window might overlap the menu bar slightly.
 - **Impact:** Cosmetic only. Electron may auto-adjust. Not a bug per spec ("top-right on macOS").
 - **Fix:** Consider using `primaryDisplay.workArea.y` as the y-offset to account for menu bar height.
 
 **4.6: `sound.test.ts` dispose test has no meaningful assertion**
+
 - **File:** `desktop/src/sound.test.ts`, lines 111-119
 - **Problem:** The dispose test only calls dispose and verifies no error is thrown. It doesn't assert observable behavior (e.g., that a re-transition after dispose fires sound again, proving state was cleared).
 - **Fix:** After dispose, call `handleStateChange` for a session that was previously tracked and assert sound fires (proving the dedup state was reset).
 
 **4.7: Config test uses `require("node:fs")` inconsistently**
+
 - **File:** `desktop/src/config.test.ts`, lines 31, 42, 53, 60
 - **Problem:** Tests import `{ writeFileSync }` at top via `import` but then use `require("node:fs").writeFileSync` in test bodies. Inconsistent.
 - **Fix:** Use the already-imported `writeFileSync` from the top-level import, or add `writeFileSync` to the existing import from `node:fs`.

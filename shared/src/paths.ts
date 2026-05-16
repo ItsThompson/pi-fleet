@@ -8,7 +8,7 @@ const APP_NAME = "PiFleet";
  * macOS: ~/Library/Application Support/PiFleet/
  */
 export function getConfigDir(): string {
-  return join(homedir(), "Library", "Application Support", APP_NAME);
+	return join(homedir(), "Library", "Application Support", APP_NAME);
 }
 
 /**
@@ -16,7 +16,7 @@ export function getConfigDir(): string {
  * macOS: ~/Library/Application Support/PiFleet/config.json
  */
 export function getConfigPath(): string {
-  return join(getConfigDir(), "config.json");
+	return join(getConfigDir(), "config.json");
 }
 
 /**
@@ -24,7 +24,7 @@ export function getConfigPath(): string {
  * macOS: ~/Library/Logs/PiFleet/
  */
 export function getLogDir(): string {
-  return join(homedir(), "Library", "Logs", APP_NAME);
+	return join(homedir(), "Library", "Logs", APP_NAME);
 }
 
 /**
@@ -32,5 +32,5 @@ export function getLogDir(): string {
  * macOS: ~/Library/Logs/PiFleet/pi-fleet.log
  */
 export function getLogPath(): string {
-  return join(getLogDir(), "pi-fleet.log");
+	return join(getLogDir(), "pi-fleet.log");
 }

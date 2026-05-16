@@ -7,6 +7,7 @@ The attention system surfaces sessions that need user input. It manifests as bad
 ## Definition
 
 A session "needs attention" when its activity state is:
+
 - `pending_approval`: blocked by tool-permission prompt, agent cannot proceed
 - `idle`: agent finished its turn, waiting for user to provide next instruction
 
@@ -22,29 +23,39 @@ Session = individual attention indicator (dot color)
 
 ### Rendering Rules
 
-| Count | Badge Display |
-|-------|--------------|
-| 0 | Hidden (no badge shown) |
-| 1-9 | Numeric badge |
-| 10+ | "9+" badge |
+| Count | Badge Display           |
+| ----- | ----------------------- |
+| 0     | Hidden (no badge shown) |
+| 1-9   | Numeric badge           |
+| 10+   | "9+" badge              |
 
 ### Implementation
 
 ```typescript
 // Computed in pod-store.ts and cluster-store.ts (client-side)
 
-function computePodAttentionCount(pod: Pod, sessions: RegisteredSession[]): number {
-  const members = sessions.filter(s => pod.memberSessionIds.includes(s.sessionId));
-  return members.filter(s => s.activity === "pending_approval" || s.activity === "idle").length;
+function computePodAttentionCount(
+	pod: Pod,
+	sessions: RegisteredSession[],
+): number {
+	const members = sessions.filter((s) =>
+		pod.memberSessionIds.includes(s.sessionId),
+	);
+	return members.filter(
+		(s) => s.activity === "pending_approval" || s.activity === "idle",
+	).length;
 }
 
 function computeClusterAttentionCount(
-  clusterId: string | null,
-  pods: Pod[],
-  podAttention: Map<string, number>,
+	clusterId: string | null,
+	pods: Pod[],
+	podAttention: Map<string, number>,
 ): number {
-  const clusterPods = pods.filter(p => getClusterForPod(p) === clusterId);
-  return clusterPods.reduce((sum, pod) => sum + (podAttention.get(pod.leadSessionId) ?? 0), 0);
+	const clusterPods = pods.filter((p) => getClusterForPod(p) === clusterId);
+	return clusterPods.reduce(
+		(sum, pod) => sum + (podAttention.get(pod.leadSessionId) ?? 0),
+		0,
+	);
 }
 ```
 
@@ -70,14 +81,14 @@ Filter badges appear in the header area of cluster and pod views. They allow fil
 
 ### Behavior
 
-| Action | Result |
-|--------|--------|
+| Action                       | Result                                                         |
+| ---------------------------- | -------------------------------------------------------------- |
 | Click "Needs Approval" badge | Toggle filter: show only pods/sessions with `pending_approval` |
-| Click "Idle" badge | Toggle filter: show only pods/sessions with `idle` state |
-| Click "Working" badge | Toggle filter: show only `processing` or `running_tool` |
-| Click active badge again | Clear that filter |
-| Multiple badges active | OR logic: show items matching ANY active filter |
-| No badges active | Show all items (default) |
+| Click "Idle" badge           | Toggle filter: show only pods/sessions with `idle` state       |
+| Click "Working" badge        | Toggle filter: show only `processing` or `running_tool`        |
+| Click active badge again     | Clear that filter                                              |
+| Multiple badges active       | OR logic: show items matching ANY active filter                |
+| No badges active             | Show all items (default)                                       |
 
 ### State Design
 
@@ -85,20 +96,20 @@ Filter badges appear in the header area of cluster and pod views. They allow fil
 // client/src/stores/filter-store.ts
 
 interface FilterState {
-  /** Active state filters (empty = show all) */
-  activeFilters: Set<ActivityStatus>;
+	/** Active state filters (empty = show all) */
+	activeFilters: Set<ActivityStatus>;
 
-  /** Toggle a filter on/off */
-  toggleFilter: (status: ActivityStatus) => void;
+	/** Toggle a filter on/off */
+	toggleFilter: (status: ActivityStatus) => void;
 
-  /** Clear all filters */
-  clearFilters: () => void;
+	/** Clear all filters */
+	clearFilters: () => void;
 
-  /** Check if a session passes current filters */
-  passesFilter: (session: RegisteredSession) => boolean;
+	/** Check if a session passes current filters */
+	passesFilter: (session: RegisteredSession) => boolean;
 
-  /** Check if a pod passes current filters (any member matches) */
-  podPassesFilter: (pod: Pod, sessions: RegisteredSession[]) => boolean;
+	/** Check if a pod passes current filters (any member matches) */
+	podPassesFilter: (pod: Pod, sessions: RegisteredSession[]) => boolean;
 }
 ```
 
@@ -147,16 +158,16 @@ A global panel showing all sessions needing attention across all clusters and po
 
 ```typescript
 interface NotificationEntry {
-  sessionId: string;
-  sessionName: string;
-  /** The pod this session belongs to */
-  podDisplayName: string;
-  /** The cluster the pod is in (null = unclustered) */
-  clusterName: string | null;
-  /** Current attention state */
-  state: "pending_approval" | "idle";
-  /** When the session entered this state */
-  stateChangedAt: string;  // ISO timestamp
+	sessionId: string;
+	sessionName: string;
+	/** The pod this session belongs to */
+	podDisplayName: string;
+	/** The cluster the pod is in (null = unclustered) */
+	clusterName: string | null;
+	/** Current attention state */
+	state: "pending_approval" | "idle";
+	/** When the session entered this state */
+	stateChangedAt: string; // ISO timestamp
 }
 ```
 
@@ -172,11 +183,11 @@ Reverse chronological by `stateChangedAt` (most recently attention-needing first
 
 ### Interaction
 
-| Action | Result |
-|--------|--------|
-| Click "Open" button on entry | Opens that session in terminal (same as clicking session card) |
-| Session leaves attention state | Entry fades out / removes from list |
-| New session enters attention state | Entry appears at top of list |
+| Action                             | Result                                                         |
+| ---------------------------------- | -------------------------------------------------------------- |
+| Click "Open" button on entry       | Opens that session in terminal (same as clicking session card) |
+| Session leaves attention state     | Entry fades out / removes from list                            |
+| New session enters attention state | Entry appears at top of list                                   |
 
 ## SSE Events
 
@@ -187,14 +198,15 @@ The client needs to track `stateChangedAt` locally:
 ```typescript
 // In session-store.ts: track when activity last changed
 interface SessionWithMeta extends RegisteredSession {
-  /** When activity last changed (client-tracked for notification ordering) */
-  activityChangedAt: string;
+	/** When activity last changed (client-tracked for notification ordering) */
+	activityChangedAt: string;
 }
 ```
 
 ## Sound Integration
 
 When a session transitions to `pending_approval` or `idle`:
+
 - If sound is enabled: play attention sound
 - Sound is the existing pi-watch sound system (carried over in fork)
 - One sound per transition (not per heartbeat that confirms the state)

@@ -41,7 +41,7 @@ type RequestRegistryEvent = "pi-fleet:request-subagent-registry";
 type RegistryResponseEvent = "subagent-orchestrator:registry-response";
 
 interface RegistryResponsePayload {
-  subagentIds: string[];
+	subagentIds: string[];
 }
 ```
 
@@ -68,6 +68,7 @@ subagent-orchestrator          pi.events          pi-fleet extension
 ### Startup Catch-Up
 
 On `session_start`, the pi-fleet extension emits `"pi-fleet:request-subagent-registry"`:
+
 - If subagent-orchestrator is loaded and has subagents: responds with current state.
 - If subagent-orchestrator is not loaded: event goes unanswered. Graceful: all sessions are single-member pods.
 
@@ -77,31 +78,34 @@ On `session_start`, the pi-fleet extension emits `"pi-fleet:request-subagent-reg
 // extension/src/pod-reporter.ts
 
 interface PodReporterDeps {
-  events: EventBus;         // pi.events
-  sessionId: string;        // this session's ID
-  postOwnership: (parentSessionId: string, subagentIds: string[]) => Promise<void>;
+	events: EventBus; // pi.events
+	sessionId: string; // this session's ID
+	postOwnership: (
+		parentSessionId: string,
+		subagentIds: string[],
+	) => Promise<void>;
 }
 
 function createPodReporter(deps: PodReporterDeps) {
-  const { events, sessionId, postOwnership } = deps;
+	const { events, sessionId, postOwnership } = deps;
 
-  // Listen for the signal
-  events.on("subagent-orchestrator:registry-updated", () => {
-    events.emit("pi-fleet:request-subagent-registry", undefined);
-  });
+	// Listen for the signal
+	events.on("subagent-orchestrator:registry-updated", () => {
+		events.emit("pi-fleet:request-subagent-registry", undefined);
+	});
 
-  // Listen for the response
-  events.on("subagent-orchestrator:registry-response", (data: unknown) => {
-    const { subagentIds } = data as RegistryResponsePayload;
-    postOwnership(sessionId, subagentIds);
-  });
+	// Listen for the response
+	events.on("subagent-orchestrator:registry-response", (data: unknown) => {
+		const { subagentIds } = data as RegistryResponsePayload;
+		postOwnership(sessionId, subagentIds);
+	});
 
-  return {
-    /** Request current state (called on session_start) */
-    requestInitialState() {
-      events.emit("pi-fleet:request-subagent-registry", undefined);
-    },
-  };
+	return {
+		/** Request current state (called on session_start) */
+		requestInitialState() {
+			events.emit("pi-fleet:request-subagent-registry", undefined);
+		},
+	};
 }
 ```
 
@@ -113,8 +117,10 @@ This handler must be added to the subagent-orchestrator extension. It's the ONLY
 // In subagent-orchestrator/index.ts (or a new file)
 
 pi.events.on("pi-fleet:request-subagent-registry", () => {
-  const ids = [...broker.entries.keys()];
-  pi.events.emit("subagent-orchestrator:registry-response", { subagentIds: ids });
+	const ids = [...broker.entries.keys()];
+	pi.events.emit("subagent-orchestrator:registry-response", {
+		subagentIds: ids,
+	});
 });
 ```
 
@@ -127,13 +133,13 @@ Child sessions include `subagentId` in their registration payload:
 const subagentId = process.env.SUBAGENT_ID; // Set by spawn-config.ts, never changes
 
 await client.register({
-  sessionId,
-  pid: process.pid,
-  cwd,
-  tmuxTarget,
-  startTime: new Date().toISOString(),
-  agentName: pi.getSessionName() ?? undefined,
-  subagentId: subagentId ?? undefined,  // NEW field
+	sessionId,
+	pid: process.pid,
+	cwd,
+	tmuxTarget,
+	startTime: new Date().toISOString(),
+	agentName: pi.getSessionName() ?? undefined,
+	subagentId: subagentId ?? undefined, // NEW field
 });
 ```
 
@@ -195,39 +201,39 @@ processing        (1)  ← thinking
 
 ```typescript
 const STATE_PRIORITY: Record<ActivityStatus, number> = {
-  pending_approval: 4,
-  idle: 3,
-  running_tool: 2,
-  processing: 1,
+	pending_approval: 4,
+	idle: 3,
+	running_tool: 2,
+	processing: 1,
 };
 
 function aggregatePodState(members: RegisteredSession[]): ActivityStatus {
-  return members.reduce(
-    (worst, member) =>
-      STATE_PRIORITY[member.activity] > STATE_PRIORITY[worst]
-        ? member.activity
-        : worst,
-    "processing" as ActivityStatus,
-  );
+	return members.reduce(
+		(worst, member) =>
+			STATE_PRIORITY[member.activity] > STATE_PRIORITY[worst]
+				? member.activity
+				: worst,
+		"processing" as ActivityStatus,
+	);
 }
 ```
 
 ## Pod Lifecycle
 
-| Event | Pod Behavior |
-|-------|-------------|
-| Session registers (no subagentId) | New single-member pod created |
+| Event                               | Pod Behavior                                                                      |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| Session registers (no subagentId)   | New single-member pod created                                                     |
 | Session registers (with subagentId) | Session waits for parent to claim it; rendered as single-member pod until claimed |
-| Parent reports ownership | Matching sessions group under parent's pod; single-member pods dissolve |
-| Parent session dies | Children become independent single-member pods (promoted to standalone) |
-| Child session dies | Removed from parent's pod; if parent remains, pod continues |
-| All members die | Pod ceases to exist |
+| Parent reports ownership            | Matching sessions group under parent's pod; single-member pods dissolve           |
+| Parent session dies                 | Children become independent single-member pods (promoted to standalone)           |
+| Child session dies                  | Removed from parent's pod; if parent remains, pod continues                       |
+| All members die                     | Pod ceases to exist                                                               |
 
 ## Graceful Degradation
 
-| Scenario | Behavior |
-|----------|----------|
-| subagent-orchestrator not installed | `registry-updated` never fires; all sessions are single-member pods |
-| pi-fleet extension not installed | Orchestrator emits events to nobody; no effect |
-| Orchestrator loaded after pi-fleet | Startup catch-up request goes unanswered; once orchestrator spawns a subagent, normal flow resumes |
-| Child registers before parent claims it | Rendered as standalone; once claimed, moves into parent's pod |
+| Scenario                                | Behavior                                                                                           |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| subagent-orchestrator not installed     | `registry-updated` never fires; all sessions are single-member pods                                |
+| pi-fleet extension not installed        | Orchestrator emits events to nobody; no effect                                                     |
+| Orchestrator loaded after pi-fleet      | Startup catch-up request goes unanswered; once orchestrator spawns a subagent, normal flow resumes |
+| Child registers before parent claims it | Rendered as standalone; once claimed, moves into parent's pod                                      |

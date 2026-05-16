@@ -65,6 +65,7 @@ Build the React client with zustand stores and core UI components. This creates 
 ### Changes
 
 **Files created:**
+
 - `client/src/stores/session-store.ts`: Zustand store for session state with activityChangedAt tracking
 - `client/src/stores/pod-store.ts`: Zustand store for pod state from SSE events
 - `client/src/stores/navigation-store.ts`: Zustand store for view routing (cluster/pod/notifications)
@@ -95,6 +96,7 @@ Build the React client with zustand stores and core UI components. This creates 
 - `client/src/components/pods/PodView.test.tsx`: State grouping tests (3 tests)
 
 **Files modified:**
+
 - `client/src/main.tsx`: Updated to use new App component
 
 ### Commits

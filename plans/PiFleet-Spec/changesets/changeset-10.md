@@ -12,28 +12,28 @@ Implemented drag-and-drop for two operations in the sidebar: pod reassignment be
 
 ### Created
 
-| File | Purpose |
-|------|---------|
-| `client/src/components/dnd/types.ts` | Discriminated union types for drag data |
-| `client/src/components/dnd/DndContext.tsx` | DnD provider with sensors and event handlers |
-| `client/src/components/dnd/DraggablePod.tsx` | Draggable wrapper for pod rows |
-| `client/src/components/dnd/DroppableCluster.tsx` | Drop zone wrapper with visual feedback |
-| `client/src/components/dnd/SortableCluster.tsx` | Sortable wrapper for cluster reordering |
-| `client/src/components/dnd/PodDragOverlay.tsx` | Ghost element for dragged pods |
-| `client/src/components/dnd/ClusterDragOverlay.tsx` | Ghost element for dragged clusters |
-| `client/src/components/dnd/index.ts` | Barrel exports |
-| `client/src/components/dnd/DndContext.test.tsx` | Component rendering tests |
-| `client/src/components/dnd/DndSidebar.test.tsx` | Sidebar DnD integration tests |
-| `client/src/components/dnd/DndApi.test.tsx` | API handler logic tests |
+| File                                               | Purpose                                      |
+| -------------------------------------------------- | -------------------------------------------- |
+| `client/src/components/dnd/types.ts`               | Discriminated union types for drag data      |
+| `client/src/components/dnd/DndContext.tsx`         | DnD provider with sensors and event handlers |
+| `client/src/components/dnd/DraggablePod.tsx`       | Draggable wrapper for pod rows               |
+| `client/src/components/dnd/DroppableCluster.tsx`   | Drop zone wrapper with visual feedback       |
+| `client/src/components/dnd/SortableCluster.tsx`    | Sortable wrapper for cluster reordering      |
+| `client/src/components/dnd/PodDragOverlay.tsx`     | Ghost element for dragged pods               |
+| `client/src/components/dnd/ClusterDragOverlay.tsx` | Ghost element for dragged clusters           |
+| `client/src/components/dnd/index.ts`               | Barrel exports                               |
+| `client/src/components/dnd/DndContext.test.tsx`    | Component rendering tests                    |
+| `client/src/components/dnd/DndSidebar.test.tsx`    | Sidebar DnD integration tests                |
+| `client/src/components/dnd/DndApi.test.tsx`        | API handler logic tests                      |
 
 ### Modified
 
-| File | Change |
-|------|--------|
-| `client/package.json` | Added @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities |
-| `package-lock.json` | Lockfile updated |
-| `client/src/components/layout/Sidebar.tsx` | Wrapped with DndProvider, SortableContext, DroppableCluster, SortableCluster |
-| `client/src/components/clusters/ClusterSection.tsx` | Wrapped pod rows with DraggablePod |
+| File                                                | Change                                                                       |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `client/package.json`                               | Added @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities                   |
+| `package-lock.json`                                 | Lockfile updated                                                             |
+| `client/src/components/layout/Sidebar.tsx`          | Wrapped with DndProvider, SortableContext, DroppableCluster, SortableCluster |
+| `client/src/components/clusters/ClusterSection.tsx` | Wrapped pod rows with DraggablePod                                           |
 
 ## Dependencies Added
 
@@ -60,11 +60,11 @@ Sidebar
 
 ## API Calls Wired
 
-| Action | Endpoint | Payload |
-|--------|----------|---------|
-| Pod dropped on cluster | `POST /api/clusters/assign` | `{ sessionId, clusterId }` |
-| Pod dropped on unclustered | `POST /api/clusters/assign` | `{ sessionId, clusterId: null }` |
-| Cluster reordered | `POST /api/clusters/reorder` | `{ orderedIds: string[] }` |
+| Action                     | Endpoint                     | Payload                          |
+| -------------------------- | ---------------------------- | -------------------------------- |
+| Pod dropped on cluster     | `POST /api/clusters/assign`  | `{ sessionId, clusterId }`       |
+| Pod dropped on unclustered | `POST /api/clusters/assign`  | `{ sessionId, clusterId: null }` |
+| Cluster reordered          | `POST /api/clusters/reorder` | `{ orderedIds: string[] }`       |
 
 ## Test Coverage
 

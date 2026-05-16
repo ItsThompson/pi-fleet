@@ -33,19 +33,19 @@ Phase 5 (parallel, after 5+8+9):
 
 ## Summary
 
-| # | Title | Type | Blocked By | Status |
-|---|-------|------|------------|--------|
-| 1 | Project Scaffold + Build | AFK | — | ⬜ |
-| 2 | Shared Types + Constants | AFK | — | ⬜ |
-| 3 | Server Core: Session Registry + SSE | AFK | #1, #2 | ⬜ |
-| 4 | Extension: Activity Tracker + Heartbeat Client | AFK | #1, #2 | ⬜ |
-| 5 | Terminal Opener | AFK | #3 | ⬜ |
-| 6 | Pod System | AFK | #3 | ⬜ |
-| 7 | Client Shell: Sidebar + Session Cards + SSE Hook | AFK | #3 | ⬜ |
-| 8 | Cluster System | AFK | #6, #7 | ⬜ |
-| 9 | Attention System | AFK | #6, #7 | ⬜ |
-| 10 | Drag-and-Drop | AFK | #8 | ⬜ |
-| 11 | Desktop Chrome: Overlay, Ghost Mode, Tray, Sound | AFK | #5, #8, #9 | ⬜ |
-| 12 | E2E Smoke Tests + Polish | AFK | #10, #11 | ⬜ |
+| #   | Title                                            | Type | Blocked By | Status |
+| --- | ------------------------------------------------ | ---- | ---------- | ------ |
+| 1   | Project Scaffold + Build                         | AFK  | —          | ⬜     |
+| 2   | Shared Types + Constants                         | AFK  | —          | ⬜     |
+| 3   | Server Core: Session Registry + SSE              | AFK  | #1, #2     | ⬜     |
+| 4   | Extension: Activity Tracker + Heartbeat Client   | AFK  | #1, #2     | ⬜     |
+| 5   | Terminal Opener                                  | AFK  | #3         | ⬜     |
+| 6   | Pod System                                       | AFK  | #3         | ⬜     |
+| 7   | Client Shell: Sidebar + Session Cards + SSE Hook | AFK  | #3         | ⬜     |
+| 8   | Cluster System                                   | AFK  | #6, #7     | ⬜     |
+| 9   | Attention System                                 | AFK  | #6, #7     | ⬜     |
+| 10  | Drag-and-Drop                                    | AFK  | #8         | ⬜     |
+| 11  | Desktop Chrome: Overlay, Ghost Mode, Tray, Sound | AFK  | #5, #8, #9 | ⬜     |
+| 12  | E2E Smoke Tests + Polish                         | AFK  | #10, #11   | ⬜     |
 
 Status legend: ⬜ Not started · 🟡 In progress · ✅ Done

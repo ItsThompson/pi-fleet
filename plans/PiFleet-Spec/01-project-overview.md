@@ -30,34 +30,34 @@ After this epic is complete:
 
 ## Goals
 
-| Goal | Success Metric |
-|------|---------------|
-| Reliable terminal switching | Click-to-switch works with window activation in 100% of single-client tmux setups |
-| Hierarchical session organization | Parent/child relationships auto-detected; subagents nest under their parent |
-| Project-based grouping | Sessions auto-assign to clusters by directory prefix; manual override persists across restarts |
-| Attention visibility | User can identify all sessions needing input within 1 second of looking at the app |
-| Rich session metadata | Each session card shows model, context %, status, turn count |
-| Graceful degradation | App works fully even without subagent-orchestrator installed (pods just have one member) |
+| Goal                              | Success Metric                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Reliable terminal switching       | Click-to-switch works with window activation in 100% of single-client tmux setups              |
+| Hierarchical session organization | Parent/child relationships auto-detected; subagents nest under their parent                    |
+| Project-based grouping            | Sessions auto-assign to clusters by directory prefix; manual override persists across restarts |
+| Attention visibility              | User can identify all sessions needing input within 1 second of looking at the app             |
+| Rich session metadata             | Each session card shows model, context %, status, turn count                                   |
+| Graceful degradation              | App works fully even without subagent-orchestrator installed (pods just have one member)       |
 
 ## Stakeholders
 
-| Stakeholder | Interest |
-|-------------|----------|
-| Pi power users (primary) | Run multiple concurrent pi sessions, need fast navigation and status awareness |
-| Subagent orchestrators | Spawn child agents and need to see which are blocked or idle |
-| Solo pi users | Benefit from terminal opener fixes and attention badges even with single sessions |
+| Stakeholder              | Interest                                                                          |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| Pi power users (primary) | Run multiple concurrent pi sessions, need fast navigation and status awareness    |
+| Subagent orchestrators   | Spawn child agents and need to see which are blocked or idle                      |
+| Solo pi users            | Benefit from terminal opener fixes and attention badges even with single sessions |
 
 ## Glossary
 
-| Term | Definition |
-|------|-----------|
-| **Pod** | A session plus all subagents it owns. Every session is always in a pod. A standalone session is a single-member pod. Derived/computed, never explicitly created or destroyed. |
-| **Cluster** | A named, persistent section that groups pods. Optionally bound to one or more directories. Survives app restarts even when empty. User-created and user-deletable. |
-| **Attention** | A session state indicating user input is needed: either `pending_approval` (tool permission blocked) or `idle` (agent finished, waiting for next prompt). |
-| **Lead session** | The parent session in a multi-member pod. Determines pod display name. |
-| **Ghost Mode** | Overlay becomes translucent and click-through, allowing interaction with windows beneath. |
-| **pi.events** | Pi's shared in-process event bus for inter-extension communication. |
-| **subagent-orchestrator** | Existing pi extension that manages spawning and communication with child agent processes. |
+| Term                      | Definition                                                                                                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pod**                   | A session plus all subagents it owns. Every session is always in a pod. A standalone session is a single-member pod. Derived/computed, never explicitly created or destroyed. |
+| **Cluster**               | A named, persistent section that groups pods. Optionally bound to one or more directories. Survives app restarts even when empty. User-created and user-deletable.            |
+| **Attention**             | A session state indicating user input is needed: either `pending_approval` (tool permission blocked) or `idle` (agent finished, waiting for next prompt).                     |
+| **Lead session**          | The parent session in a multi-member pod. Determines pod display name.                                                                                                        |
+| **Ghost Mode**            | Overlay becomes translucent and click-through, allowing interaction with windows beneath.                                                                                     |
+| **pi.events**             | Pi's shared in-process event bus for inter-extension communication.                                                                                                           |
+| **subagent-orchestrator** | Existing pi extension that manages spawning and communication with child agent processes.                                                                                     |
 
 ## Project Origin
 

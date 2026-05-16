@@ -18,12 +18,12 @@ Pi Fleet is **observation-only**: all agent interaction stays in the terminal.
 
 Pi Fleet is a Turborepo monorepo with five packages:
 
-| Package | Role |
-|---------|------|
-| `@pi-fleet/shared` | Type definitions, constants, path utilities shared across all packages |
-| `@pi-fleet/server` | Fastify HTTP server + SSE: session registry, pod computation, cluster management |
-| `@pi-fleet/client` | React UI (shadcn/ui + Tailwind + zustand): sidebar, card grids, drag-and-drop |
-| `@pi-fleet/desktop` | Electron main process: window management, tray, global shortcuts, terminal opener |
+| Package               | Role                                                                                         |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `@pi-fleet/shared`    | Type definitions, constants, path utilities shared across all packages                       |
+| `@pi-fleet/server`    | Fastify HTTP server + SSE: session registry, pod computation, cluster management             |
+| `@pi-fleet/client`    | React UI (shadcn/ui + Tailwind + zustand): sidebar, card grids, drag-and-drop                |
+| `@pi-fleet/desktop`   | Electron main process: window management, tray, global shortcuts, terminal opener            |
 | `@pi-fleet/extension` | Pi extension installed per-user: registers sessions, sends heartbeats, reports pod ownership |
 
 The Electron app embeds the Fastify server (localhost:8314) and loads the React client via `@fastify/static`. Each pi session runs the extension, which POSTs registration and heartbeats to the server. The client subscribes to SSE for real-time updates.
@@ -96,6 +96,7 @@ ln -s ~/Documents/pi-fleet/extension ~/.pi/agent/extensions/pi-fleet
 ```
 
 Pi will auto-discover it on next session start. The extension:
+
 1. Registers the session on `session_start`
 2. Sends heartbeats every 5 seconds with activity state and metadata
 3. Reports subagent ownership via the inter-extension protocol (if `subagent-orchestrator` is installed)
@@ -129,9 +130,9 @@ Pi Fleet stores its config at:
 
 ## Key Bindings
 
-| Key | Action |
-|-----|--------|
-| F5 | Toggle overlay visibility |
+| Key | Action                    |
+| --- | ------------------------- |
+| F5  | Toggle overlay visibility |
 
 Additional controls are available in the system tray menu (ghost mode, sound, quit).
 
@@ -150,20 +151,20 @@ If `subagent-orchestrator` is not installed, all sessions render as standalone p
 
 The embedded Fastify server exposes these endpoints (localhost only, no auth):
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/sessions/register` | Register a new session |
-| POST | `/api/sessions/heartbeat` | Update session state |
-| POST | `/api/sessions/unregister` | Remove a session |
-| GET | `/api/sessions` | List all registered sessions |
-| GET | `/api/pods` | List all computed pods |
-| POST | `/api/pods/ownership` | Report subagent ownership |
-| GET | `/api/events` | SSE stream for real-time updates |
-| POST | `/api/open-terminal` | Resolve session to tmux target |
-| GET | `/api/clusters` | List clusters with membership |
-| POST | `/api/clusters` | Create a cluster |
-| PATCH | `/api/clusters/:id` | Update a cluster |
-| DELETE | `/api/clusters/:id` | Delete a cluster |
-| POST | `/api/clusters/reorder` | Update cluster sort order |
-| POST | `/api/clusters/assign` | Manual pod-to-cluster assignment |
-| GET | `/api/health` | Server health check |
+| Method | Path                       | Purpose                          |
+| ------ | -------------------------- | -------------------------------- |
+| POST   | `/api/sessions/register`   | Register a new session           |
+| POST   | `/api/sessions/heartbeat`  | Update session state             |
+| POST   | `/api/sessions/unregister` | Remove a session                 |
+| GET    | `/api/sessions`            | List all registered sessions     |
+| GET    | `/api/pods`                | List all computed pods           |
+| POST   | `/api/pods/ownership`      | Report subagent ownership        |
+| GET    | `/api/events`              | SSE stream for real-time updates |
+| POST   | `/api/open-terminal`       | Resolve session to tmux target   |
+| GET    | `/api/clusters`            | List clusters with membership    |
+| POST   | `/api/clusters`            | Create a cluster                 |
+| PATCH  | `/api/clusters/:id`        | Update a cluster                 |
+| DELETE | `/api/clusters/:id`        | Delete a cluster                 |
+| POST   | `/api/clusters/reorder`    | Update cluster sort order        |
+| POST   | `/api/clusters/assign`     | Manual pod-to-cluster assignment |
+| GET    | `/api/health`              | Server health check              |

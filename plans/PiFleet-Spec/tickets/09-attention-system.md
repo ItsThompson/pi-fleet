@@ -68,6 +68,7 @@ Implement the attention badge hierarchy, clickable filter badges, and the global
 ### Changes
 
 **Files created:**
+
 - `client/src/stores/filter-store.ts`: Zustand store for activity state filtering
 - `client/src/stores/filter-store.test.ts`: 13 unit tests for filter logic
 - `client/src/lib/format-relative-time.ts`: "Xm ago" formatter utility
@@ -85,6 +86,7 @@ Implement the attention badge hierarchy, clickable filter badges, and the global
 - `client/src/components/attention/index.ts`: Barrel exports
 
 **Files modified:**
+
 - `client/src/components/layout/Header.tsx`: Added bell icon, attention count badge, NotificationPanel toggle
 - `client/src/components/layout/MainArea.tsx`: Replaced clusterName prop usage; added AllPodsView with FilterBadges
 - `client/src/components/clusters/ClusterView.tsx`: Integrated FilterBadges and filter-based pod filtering

@@ -7,19 +7,19 @@ const BASE_URL = `http://127.0.0.1:${SERVER_PORT}`;
  * Minimized to what PodReporter needs.
  */
 export interface PodReporterEventBus {
-  on(event: string, handler: (data?: unknown) => void): void;
-  emit(event: string, data?: unknown): void;
+	on(event: string, handler: (data?: unknown) => void): void;
+	emit(event: string, data?: unknown): void;
 }
 
 export interface PodReporterDeps {
-  events: PodReporterEventBus;
-  sessionId: string;
-  /** Injectable fetch for testing. Defaults to global fetch. */
-  fetchFn?: typeof fetch;
+	events: PodReporterEventBus;
+	sessionId: string;
+	/** Injectable fetch for testing. Defaults to global fetch. */
+	fetchFn?: typeof fetch;
 }
 
 interface RegistryResponsePayload {
-  subagentIds: string[];
+	subagentIds: string[];
 }
 
 /**
@@ -35,39 +35,39 @@ interface RegistryResponsePayload {
  * 4. PodReporter POSTs ownership to server
  */
 export function createPodReporter(deps: PodReporterDeps) {
-  const { events, sessionId } = deps;
-  const fetchFn = deps.fetchFn ?? globalThis.fetch;
+	const { events, sessionId } = deps;
+	const fetchFn = deps.fetchFn ?? globalThis.fetch;
 
-  async function postOwnership(subagentIds: string[]): Promise<void> {
-    try {
-      await fetchFn(`${BASE_URL}/api/pods/ownership`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ parentSessionId: sessionId, subagentIds }),
-        signal: AbortSignal.timeout(5000),
-      });
-    } catch {
-      // Graceful degradation: server may not be running
-    }
-  }
+	async function postOwnership(subagentIds: string[]): Promise<void> {
+		try {
+			await fetchFn(`${BASE_URL}/api/pods/ownership`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ parentSessionId: sessionId, subagentIds }),
+				signal: AbortSignal.timeout(5000),
+			});
+		} catch {
+			// Graceful degradation: server may not be running
+		}
+	}
 
-  // Listen for the signal: "something changed in the subagent registry"
-  events.on("subagent-orchestrator:registry-updated", () => {
-    events.emit("pi-fleet:request-subagent-registry", undefined);
-  });
+	// Listen for the signal: "something changed in the subagent registry"
+	events.on("subagent-orchestrator:registry-updated", () => {
+		events.emit("pi-fleet:request-subagent-registry", undefined);
+	});
 
-  // Listen for the response: "here are the current subagent IDs"
-  events.on("subagent-orchestrator:registry-response", (data: unknown) => {
-    const payload = data as RegistryResponsePayload;
-    if (payload?.subagentIds && Array.isArray(payload.subagentIds)) {
-      postOwnership(payload.subagentIds);
-    }
-  });
+	// Listen for the response: "here are the current subagent IDs"
+	events.on("subagent-orchestrator:registry-response", (data: unknown) => {
+		const payload = data as RegistryResponsePayload;
+		if (payload?.subagentIds && Array.isArray(payload.subagentIds)) {
+			postOwnership(payload.subagentIds);
+		}
+	});
 
-  return {
-    /** Request current state (called on session_start for startup catch-up) */
-    requestInitialState(): void {
-      events.emit("pi-fleet:request-subagent-registry", undefined);
-    },
-  };
+	return {
+		/** Request current state (called on session_start for startup catch-up) */
+		requestInitialState(): void {
+			events.emit("pi-fleet:request-subagent-registry", undefined);
+		},
+	};
 }

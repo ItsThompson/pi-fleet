@@ -55,6 +55,7 @@ Write automated E2E tests covering the 6 smoke test scenarios from the spec's te
 ### Changes
 
 **Files created:**
+
 - `e2e/src/helpers/test-harness.ts`: Creates isolated test server on random port with temp config directory
 - `e2e/src/helpers/mock-session.ts`: MockSession class for simulating pi session register + heartbeat lifecycle
 - `e2e/src/helpers/index.ts`: Barrel export for test helpers
@@ -70,6 +71,7 @@ Write automated E2E tests covering the 6 smoke test scenarios from the spec's te
 - `client/src/hooks/useHealth.ts`: Hook to fetch health data including pi-watch detection flag
 
 **Files modified:**
+
 - `e2e/package.json`: Switched from Playwright to vitest for server-level integration tests, added @pi-fleet/server dependency
 - `e2e/tsconfig.json`: Simplified (removed project references)
 - `server/src/routes/health.ts`: Added piWatchDetected field to health response

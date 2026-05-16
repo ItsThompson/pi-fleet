@@ -61,6 +61,7 @@ Implement the full terminal-open flow in `desktop/src/terminal-opener.ts` and th
 ### Changes
 
 **Files created:**
+
 - `server/src/routes/open-terminal.ts`: POST /api/open-terminal route handler
 - `server/src/routes/open-terminal.test.ts`: Route tests (5 tests)
 - `desktop/src/terminal-opener.ts`: Core terminal opener module with all fixes
@@ -70,6 +71,7 @@ Implement the full terminal-open flow in `desktop/src/terminal-opener.ts` and th
 - `desktop/tsconfig.build.json`: Build-only TS config excluding test files
 
 **Files modified:**
+
 - `desktop/src/main.ts`: Wire up IPC handler on app ready
 - `desktop/package.json`: Updated build script to use tsconfig.build.json
 - `desktop/tsconfig.json`: Adjusted rootDir for cross-package test imports
