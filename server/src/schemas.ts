@@ -66,12 +66,3 @@ export const assignClusterBodySchema = z.object({
   sessionId: z.string().min(1),
   clusterId: z.string().nullable(),
 });
-
-export type RegisterBodyParsed = z.infer<typeof registerBodySchema>;
-export type HeartbeatBodyParsed = z.infer<typeof heartbeatBodySchema>;
-export type OwnershipBodyParsed = z.infer<typeof ownershipBodySchema>;
-export type OpenTerminalBodyParsed = z.infer<typeof openTerminalBodySchema>;
-export type CreateClusterBodyParsed = z.infer<typeof createClusterBodySchema>;
-export type UpdateClusterBodyParsed = z.infer<typeof updateClusterBodySchema>;
-export type ReorderClustersBodyParsed = z.infer<typeof reorderClustersBodySchema>;
-export type AssignClusterBodyParsed = z.infer<typeof assignClusterBodySchema>;
