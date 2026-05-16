@@ -21,7 +21,8 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
   const clusters = useClusterStore((state) => state.clusters);
 
   const dismissed = useNotificationDismissStore((state) => state.dismissed);
-  const dismissStore = useNotificationDismissStore();
+  const dismiss = useNotificationDismissStore((state) => state.dismiss);
+  const dismissAll = useNotificationDismissStore((state) => state.dismissAll);
 
   const allEntries = deriveNotificationEntries(sessions, pods, activityChangedAt, clusters);
   const entries = filterDismissedNotifications(allEntries, dismissed);
@@ -29,12 +30,12 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
   const handleDismiss = (sessionId: string) => {
     const entry = entries.find((item) => item.sessionId === sessionId);
     if (entry) {
-      dismissStore.dismiss(sessionId, entry.stateChangedAt);
+      dismiss(sessionId, entry.stateChangedAt);
     }
   };
 
   const handleClearAll = () => {
-    dismissStore.dismissAll(entries);
+    dismissAll(entries);
   };
 
   return (

@@ -12,22 +12,18 @@ interface HeaderProps {
   connectionState: SSEConnectionState;
 }
 
-function computeVisibleAttentionCount(
+export function computeVisibleAttentionCount(
   sessions: Map<string, { activity: string }>,
   activityChangedAt: Map<string, string>,
   dismissed: Map<string, { dismissedStateChangedAt: string }>,
 ): number {
-  let count = 0;
-  sessions.forEach((session, sessionId) => {
-    if (session.activity !== "pending_approval" && session.activity !== "idle") return;
+  return Array.from(sessions.entries()).reduce((count, [sessionId, session]) => {
+    if (session.activity !== "pending_approval" && session.activity !== "idle") return count;
     const stateChangedAt = activityChangedAt.get(sessionId) ?? "";
     const record = dismissed.get(sessionId);
     const isCurrentlyDismissed = record != null && stateChangedAt <= record.dismissedStateChangedAt;
-    if (!isCurrentlyDismissed) {
-      count += 1;
-    }
-  });
-  return count;
+    return isCurrentlyDismissed ? count : count + 1;
+  }, 0);
 }
 
 export function Header({ connectionState }: HeaderProps) {
