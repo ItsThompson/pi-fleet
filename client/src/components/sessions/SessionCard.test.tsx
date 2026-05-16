@@ -30,6 +30,7 @@ describe("SessionCard", () => {
 		// Mock the piFleet bridge
 		window.piFleet = {
 			openSession: vi.fn().mockResolvedValue({ ok: true }),
+			selectDirectory: vi.fn(),
 			getConfig: vi.fn(),
 			setConfig: vi.fn(),
 			onVisibilityChange: vi.fn(),

@@ -42,3 +42,21 @@ export async function openInTerminal(
 		return { ok: false, reason: "ipc-error" };
 	}
 }
+
+/**
+ * Open a native folder picker dialog.
+ * Returns the selected absolute path, or null if canceled or bridge unavailable.
+ * Never throws.
+ */
+export async function selectDirectory(): Promise<string | null> {
+	const bridge = getBridge();
+	if (!bridge) {
+		return null;
+	}
+
+	try {
+		return await bridge.selectDirectory();
+	} catch {
+		return null;
+	}
+}

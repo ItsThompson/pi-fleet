@@ -169,6 +169,7 @@ describe("NotificationPanel", () => {
 		const mockOpenSession = vi.fn().mockResolvedValue({ ok: true });
 		window.piFleet = {
 			openSession: mockOpenSession,
+			selectDirectory: vi.fn(),
 			getConfig: vi.fn(),
 			setConfig: vi.fn(),
 			onVisibilityChange: vi.fn(),
