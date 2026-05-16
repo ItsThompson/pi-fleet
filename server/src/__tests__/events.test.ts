@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createTestServer, type TestServer } from "./test-server-builder.js";
-import type { SSEEvent } from "@pi-fleet/shared";
 import http from "node:http";
 
 vi.mock("@pi-fleet/shared", async (importOriginal) => {

@@ -1,4 +1,4 @@
-import type { Pod, RegisteredSession, ActivityStatus } from "@pi-fleet/shared";
+import type { Pod, RegisteredSession } from "@pi-fleet/shared";
 import { isAttentionState } from "@pi-fleet/shared";
 import { useFilterStore } from "@/stores/filter-store";
 import { useSessionStore } from "@/stores/session-store";
