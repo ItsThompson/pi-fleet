@@ -1,20 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-
-export interface PiFleetBridge {
-  openSession(sessionId: string): Promise<{ ok: boolean; reason?: string }>;
-  getConfig(): Promise<{
-    version: 1;
-    preferences: {
-      ghostMode: boolean;
-      ghostOpacity: number;
-      soundEnabled: boolean;
-    };
-  }>;
-  setConfig(key: string, value: unknown): Promise<void>;
-  onVisibilityChange(callback: (visible: boolean) => void): () => void;
-  getServerUrl(): string;
-  getVersion(): string;
-}
+import type { PiFleetBridge } from "@pi-fleet/shared";
 
 contextBridge.exposeInMainWorld("piFleet", {
   openSession(sessionId: string) {
