@@ -18,7 +18,7 @@ export function ClusterHeader({
 }: ClusterHeaderProps) {
 	return (
 		<div className="flex items-start justify-between mb-4">
-			<div>
+			<div className="min-w-0">
 				<div className="flex items-center gap-2">
 					<h2 className="text-lg font-semibold">{cluster.definition.name}</h2>
 					{cluster.attentionCount > 0 && (
@@ -47,7 +47,7 @@ export function ClusterHeader({
 				)}
 			</div>
 
-			<div className="flex items-center gap-1">
+			<div className="flex items-center gap-1 shrink-0">
 				<Button
 					variant="ghost"
 					size="icon"
