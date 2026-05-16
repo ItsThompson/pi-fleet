@@ -40,6 +40,7 @@ export {
 } from "./assignment.js";
 
 // Attention domain
+export type { AttentionStatus } from "./attention.js";
 export { ATTENTION_STATES, isAttentionState } from "./attention.js";
 
 // Constants
