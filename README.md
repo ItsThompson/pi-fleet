@@ -36,7 +36,17 @@ The Electron app embeds the Fastify server (localhost:8314) and loads the React 
 - tmux (for terminal opener functionality)
 - pi coding agent installed
 
-## Setup
+## Download a Release
+
+Download the latest `.dmg` from the [releases page](https://github.com/ItsThompson/pi-fleet/releases) and install the app. You still need to install the pi extension (see below).
+
+Since the app is not code-signed, macOS may block it with a "damaged" error after downloading. To fix this, run:
+
+```bash
+sudo xattr -d com.apple.quarantine /Applications/PiFleet.app
+```
+
+## Setup (Development)
 
 ```bash
 cd ~/Documents/pi-fleet
