@@ -6,16 +6,10 @@ import { NotificationItem } from "./NotificationItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { openInTerminal } from "@/lib/bridge";
 
 interface NotificationPanelProps {
   onClose: () => void;
-}
-
-function handleOpenInTerminal(sessionId: string): void {
-  const bridge = (window as unknown as { piFleet?: { openSession: (id: string) => void } }).piFleet;
-  if (bridge) {
-    bridge.openSession(sessionId);
-  }
 }
 
 export function NotificationPanel({ onClose }: NotificationPanelProps) {
@@ -43,7 +37,7 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
               <NotificationItem
                 key={entry.sessionId}
                 entry={entry}
-                onOpen={handleOpenInTerminal}
+                onOpen={openInTerminal}
               />
             ))}
           </div>

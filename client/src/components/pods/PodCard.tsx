@@ -5,16 +5,10 @@ import { Button } from "@/components/ui/button";
 import { SessionStatusDot } from "@/components/sessions/SessionStatusDot";
 import { ExternalLink, Users } from "lucide-react";
 import { useNavigationStore } from "@/stores/navigation-store";
+import { openInTerminal } from "@/lib/bridge";
 
 interface PodCardProps {
   pod: Pod;
-}
-
-function handleOpenInTerminal(sessionId: string): void {
-  const bridge = (window as unknown as { piFleet?: { openSession: (id: string) => void } }).piFleet;
-  if (bridge) {
-    bridge.openSession(sessionId);
-  }
 }
 
 export function PodCard({ pod }: PodCardProps) {
@@ -42,7 +36,7 @@ export function PodCard({ pod }: PodCardProps) {
             size="xs"
             onClick={(event) => {
               event.stopPropagation();
-              handleOpenInTerminal(pod.leadSessionId);
+              openInTerminal(pod.leadSessionId);
             }}
             title="Open in terminal"
           >

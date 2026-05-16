@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { SessionStatusDot } from "./SessionStatusDot";
 import { ExternalLink } from "lucide-react";
+import { openInTerminal } from "@/lib/bridge";
 
 interface SessionCardProps {
   session: RegisteredSession;
@@ -14,13 +15,6 @@ interface SessionCardProps {
 
 function getSessionDisplayName(session: RegisteredSession): string {
   return session.agentName ?? session.cwd.split("/").pop() ?? session.sessionId.slice(0, 8);
-}
-
-function handleOpenInTerminal(sessionId: string): void {
-  const bridge = (window as unknown as { piFleet?: { openSession: (id: string) => void } }).piFleet;
-  if (bridge) {
-    bridge.openSession(sessionId);
-  }
 }
 
 export function SessionCard({ session, isSubagent, isLead }: SessionCardProps) {
@@ -48,7 +42,7 @@ export function SessionCard({ session, isSubagent, isLead }: SessionCardProps) {
           <Button
             variant="ghost"
             size="xs"
-            onClick={() => handleOpenInTerminal(session.sessionId)}
+            onClick={() => openInTerminal(session.sessionId)}
             title="Open in terminal"
           >
             <ExternalLink className="h-3.5 w-3.5" />
