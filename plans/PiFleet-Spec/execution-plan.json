@@ -1,0 +1,42 @@
+{
+  "type": "sequential",
+  "children": [
+    {
+      "type": "parallel",
+      "children": [
+        { "type": "task", "id": "1" },
+        { "type": "task", "id": "2" }
+      ]
+    },
+    {
+      "type": "parallel",
+      "children": [
+        { "type": "task", "id": "3" },
+        { "type": "task", "id": "4" }
+      ]
+    },
+    {
+      "type": "parallel",
+      "children": [
+        { "type": "task", "id": "5" },
+        { "type": "task", "id": "6" },
+        { "type": "task", "id": "7" }
+      ]
+    },
+    {
+      "type": "parallel",
+      "children": [
+        { "type": "task", "id": "8" },
+        { "type": "task", "id": "9" }
+      ]
+    },
+    {
+      "type": "parallel",
+      "children": [
+        { "type": "task", "id": "10" },
+        { "type": "task", "id": "11" }
+      ]
+    },
+    { "type": "task", "id": "12" }
+  ]
+}

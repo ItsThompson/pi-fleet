@@ -60,6 +60,7 @@ export function createWindowManager(deps: WindowManagerDeps): WindowManager {
       show: false,
       alwaysOnTop: true,
       skipTaskbar: true,
+      backgroundColor: "#09090b",
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
