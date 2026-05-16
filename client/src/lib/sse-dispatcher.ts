@@ -181,6 +181,7 @@ function dispatchStoreEvent(
 				return;
 			}
 			usePodStore.getState().removePod(result.data.leadSessionId);
+			// Reset nav after removal: ensures re-renders never find a stale entity
 			useNavigationStore
 				.getState()
 				.resetIfViewing("pod", result.data.leadSessionId);
@@ -211,6 +212,7 @@ function dispatchStoreEvent(
 				return;
 			}
 			useClusterStore.getState().removeCluster(result.data.clusterId);
+			// Reset nav after removal: ensures re-renders never find a stale entity
 			useNavigationStore
 				.getState()
 				.resetIfViewing("cluster", result.data.clusterId);
