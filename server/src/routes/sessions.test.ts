@@ -29,7 +29,7 @@ describe("sessions routes", () => {
 					sessionId: "sess-1",
 					pid: 1234,
 					cwd: "/Users/test/project",
-					tmuxTarget: "main:1.0",
+					tmuxTarget: "%0",
 					startTime: "2025-01-01T00:00:00.000Z",
 				},
 			});
@@ -83,7 +83,7 @@ describe("sessions routes", () => {
 					sessionId: "sess-opts",
 					pid: 5678,
 					cwd: "/Users/test/proj",
-					tmuxTarget: "main:1.0",
+					tmuxTarget: "%0",
 					startTime: "2025-01-01T00:00:00.000Z",
 					agentName: "TestAgent",
 					subagentId: "sub-1",
@@ -131,7 +131,7 @@ describe("sessions routes", () => {
 				sessionId: "sess-dup",
 				pid: 1234,
 				cwd: "/Users/test/first",
-				tmuxTarget: "main:1.0",
+				tmuxTarget: "%0",
 				startTime: "2025-01-01T00:00:00.000Z",
 			};
 
@@ -164,7 +164,7 @@ describe("sessions routes", () => {
 					sessionId: "sess-hb",
 					pid: 1234,
 					cwd: "/Users/test/project",
-					tmuxTarget: "main:1.0",
+					tmuxTarget: "%0",
 					startTime: "2025-01-01T00:00:00.000Z",
 				},
 			});
@@ -228,7 +228,7 @@ describe("sessions routes", () => {
 					sessionId: "sess-hb",
 					activity: "processing",
 					lastEventTime: "2025-01-01T00:01:00.000Z",
-					tmuxTarget: "main:2.0",
+					tmuxTarget: "%1",
 					agentName: "UpdatedAgent",
 					model: "Claude Opus 4",
 					contextUsage: { tokens: 30000, contextWindow: 200000, percent: 15 },
@@ -241,7 +241,7 @@ describe("sessions routes", () => {
 			expect(response.statusCode).toBe(200);
 
 			const session = testServer.sessionRegistry.get("sess-hb")!;
-			expect(session.tmuxTarget).toBe("main:2.0");
+			expect(session.tmuxTarget).toBe("%1");
 			expect(session.agentName).toBe("UpdatedAgent");
 			expect(session.model).toBe("Claude Opus 4");
 			expect(session.contextUsage).toEqual({
@@ -275,13 +275,13 @@ describe("sessions routes", () => {
 					sessionId: "sess-null-update",
 					activity: "idle",
 					lastEventTime: "2025-01-01T00:01:00.000Z",
-					tmuxTarget: "main:3.0",
+					tmuxTarget: "%2",
 				},
 			});
 
 			expect(response.statusCode).toBe(200);
 			const session = testServer.sessionRegistry.get("sess-null-update")!;
-			expect(session.tmuxTarget).toBe("main:3.0");
+			expect(session.tmuxTarget).toBe("%2");
 		});
 	});
 
@@ -294,7 +294,7 @@ describe("sessions routes", () => {
 					sessionId: "sess-unreg",
 					pid: 1234,
 					cwd: "/Users/test/project",
-					tmuxTarget: "main:1.0",
+					tmuxTarget: "%0",
 					startTime: "2025-01-01T00:00:00.000Z",
 				},
 			});
@@ -380,7 +380,7 @@ describe("sessions routes", () => {
 					sessionId: "sess-b",
 					pid: 2000,
 					cwd: "/path/b",
-					tmuxTarget: "main:2.0",
+					tmuxTarget: "%1",
 					startTime: "2025-01-01T00:00:01.000Z",
 				},
 			});

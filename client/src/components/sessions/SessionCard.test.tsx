@@ -11,7 +11,7 @@ function buildSession(
 		sessionId: "sess-abc123",
 		pid: 9876,
 		cwd: "/home/user/my-project",
-		tmuxTarget: "main:1.0",
+		tmuxTarget: "%0",
 		startTime: "2025-01-01T00:00:00Z",
 		activity: "processing",
 		lastSeen: "2025-01-01T00:01:00Z",

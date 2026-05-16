@@ -64,7 +64,7 @@ describe("type contracts (compile-time verification)", () => {
 			sessionId: "abc-123",
 			pid: 1234,
 			cwd: "/home/user/project",
-			tmuxTarget: "main:1.0",
+			tmuxTarget: "%0",
 			startTime: new Date().toISOString(),
 		};
 		expect(body.sessionId).toBe("abc-123");
@@ -100,7 +100,7 @@ describe("type contracts (compile-time verification)", () => {
 			sessionId: "abc-123",
 			pid: 1234,
 			cwd: "/home/user/project",
-			tmuxTarget: "main:1.0",
+			tmuxTarget: "%0",
 			startTime: "2025-01-01T00:00:00.000Z",
 			activity: "idle",
 			lastSeen: "2025-01-01T00:00:05.000Z",

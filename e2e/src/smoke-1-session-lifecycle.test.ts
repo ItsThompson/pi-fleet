@@ -21,7 +21,7 @@ describe("Smoke 1: Session Lifecycle", () => {
 			agentName: "test-agent",
 			model: "Claude Sonnet 4",
 			cwd: "/Users/test/project",
-			tmuxTarget: "main:1.0",
+			tmuxTarget: "%0",
 		});
 
 		const registerRes = await session.register();
@@ -113,7 +113,7 @@ describe("Smoke 1: Session Lifecycle", () => {
 
 	it("open-terminal endpoint resolves session tmux target", async () => {
 		const session = new MockSession(harness.baseUrl, {
-			tmuxTarget: "dev:2.1",
+			tmuxTarget: "%2",
 		});
 		await session.register();
 
@@ -124,7 +124,7 @@ describe("Smoke 1: Session Lifecycle", () => {
 		});
 		expect(openRes.status).toBe(200);
 		const openBody = await openRes.json();
-		expect(openBody.tmuxTarget).toBe("dev:2.1");
+		expect(openBody.tmuxTarget).toBe("%2");
 	});
 
 	it("SSE stream delivers session events in real-time", async () => {

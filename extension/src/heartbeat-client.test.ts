@@ -60,7 +60,7 @@ describe("HeartbeatClient", () => {
 				sessionId: "s1",
 				pid: 123,
 				cwd: "/project",
-				tmuxTarget: "main:1.0",
+				tmuxTarget: "%0",
 				startTime: "2026-01-01T00:00:00.000Z",
 			});
 

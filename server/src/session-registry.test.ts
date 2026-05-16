@@ -8,7 +8,7 @@ function buildRegisterBody(overrides?: Partial<RegisterBody>): RegisterBody {
 		sessionId: "sess-1",
 		pid: 1234,
 		cwd: "/Users/test/project",
-		tmuxTarget: "main:1.0",
+		tmuxTarget: "%0",
 		startTime: "2025-01-01T00:00:00.000Z",
 		...overrides,
 	};
@@ -43,7 +43,7 @@ describe("SessionRegistry", () => {
 			expect(session.activity).toBe("idle");
 			expect(session.lastSeen).toBe("2025-01-01T00:00:00.000Z");
 			expect(session.cwd).toBe("/Users/test/project");
-			expect(session.tmuxTarget).toBe("main:1.0");
+			expect(session.tmuxTarget).toBe("%0");
 
 			expect(events).toHaveLength(1);
 			expect(events[0].type).toBe("session:added");
@@ -125,7 +125,7 @@ describe("SessionRegistry", () => {
 					turnCount: 7,
 					thinkingLevel: "medium",
 					lastToolName: "bash",
-					tmuxTarget: "main:2.0",
+					tmuxTarget: "%1",
 					agentName: "new-agent",
 				}),
 			);
@@ -140,7 +140,7 @@ describe("SessionRegistry", () => {
 			expect(session.turnCount).toBe(7);
 			expect(session.thinkingLevel).toBe("medium");
 			expect(session.lastToolName).toBe("bash");
-			expect(session.tmuxTarget).toBe("main:2.0");
+			expect(session.tmuxTarget).toBe("%1");
 			expect(session.agentName).toBe("new-agent");
 		});
 

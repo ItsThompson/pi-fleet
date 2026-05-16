@@ -19,7 +19,7 @@ describe("POST /api/open-terminal", () => {
 			sessionId: "sess-1",
 			pid: 1234,
 			cwd: "/Users/test/project",
-			tmuxTarget: "main:1.0",
+			tmuxTarget: "%0",
 			startTime: "2025-01-01T00:00:00.000Z",
 		});
 
@@ -30,7 +30,7 @@ describe("POST /api/open-terminal", () => {
 		});
 
 		expect(response.statusCode).toBe(200);
-		expect(response.json()).toEqual({ tmuxTarget: "main:1.0" });
+		expect(response.json()).toEqual({ tmuxTarget: "%0" });
 	});
 
 	it("returns 404 for unknown session", async () => {
@@ -74,12 +74,12 @@ describe("POST /api/open-terminal", () => {
 		expect(response.json().error).toBe("Validation failed");
 	});
 
-	it("returns non-numeric session names in tmuxTarget", async () => {
+	it("returns pane ID in tmuxTarget", async () => {
 		server.registry.register({
 			sessionId: "sess-2",
 			pid: 9999,
 			cwd: "/Users/test/dev",
-			tmuxTarget: "my-project:dev.2",
+			tmuxTarget: "%12",
 			startTime: "2025-01-01T00:00:00.000Z",
 		});
 
@@ -90,6 +90,6 @@ describe("POST /api/open-terminal", () => {
 		});
 
 		expect(response.statusCode).toBe(200);
-		expect(response.json()).toEqual({ tmuxTarget: "my-project:dev.2" });
+		expect(response.json()).toEqual({ tmuxTarget: "%12" });
 	});
 });

@@ -26,7 +26,7 @@ export function buildRegisterBody(
 		sessionId: options.sessionId ?? randomUUID(),
 		pid: options.pid ?? Math.floor(Math.random() * 90000) + 10000,
 		cwd: options.cwd ?? "/Users/test/project",
-		tmuxTarget: options.tmuxTarget ?? "main:1.0",
+		tmuxTarget: options.tmuxTarget ?? "%0",
 		startTime: new Date().toISOString(),
 		agentName: options.agentName,
 		subagentId: options.subagentId,

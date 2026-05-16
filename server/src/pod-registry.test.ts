@@ -10,7 +10,7 @@ function buildRegisterBody(
 		sessionId: `session-${Math.random().toString(36).slice(2, 8)}`,
 		pid: Math.floor(Math.random() * 10000),
 		cwd: "/Users/test/project",
-		tmuxTarget: "main:1.0",
+		tmuxTarget: "%0",
 		startTime: new Date().toISOString(),
 		...overrides,
 	};

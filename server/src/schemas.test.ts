@@ -6,7 +6,7 @@ describe("registerBodySchema", () => {
 		sessionId: "sess-123",
 		pid: 1234,
 		cwd: "/Users/test/project",
-		tmuxTarget: "main:1.0",
+		tmuxTarget: "%0",
 		startTime: "2025-01-01T00:00:00.000Z",
 	};
 
@@ -102,7 +102,7 @@ describe("heartbeatBodySchema", () => {
 	it("accepts all optional fields", () => {
 		const full = {
 			...validPayload,
-			tmuxTarget: "main:1.0",
+			tmuxTarget: "%0",
 			agentName: "pi-agent",
 			model: "Claude Sonnet 4",
 			contextUsage: { tokens: 10000, contextWindow: 128000, percent: 8 },

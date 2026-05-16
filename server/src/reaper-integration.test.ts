@@ -13,7 +13,7 @@ function buildRegisterBody(overrides?: Partial<RegisterBody>): RegisterBody {
 		sessionId: "sess-1",
 		pid: 1234,
 		cwd: "/Users/test/project",
-		tmuxTarget: "main:1.0",
+		tmuxTarget: "%0",
 		startTime: "2025-01-01T00:00:00.000Z",
 		...overrides,
 	};
