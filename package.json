@@ -17,7 +17,8 @@
 		"test": "turbo test",
 		"lint": "eslint '**/*.{ts,tsx}' --ignore-pattern '**/dist/**'",
 		"app": "turbo build && npm start --prefix desktop",
-		"dist": "turbo build && npm run dist --prefix desktop"
+		"dist": "turbo build && npm run dist --prefix desktop",
+		"prepare": "lefthook install"
 	},
 	"packageManager": "npm@10.8.2",
 	"engines": {
@@ -25,6 +26,7 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
+		"@evilmartians/lefthook": "^2.1.6",
 		"eslint": "^10.0.3",
 		"prettier": "^3.8.3",
 		"turbo": "^2.4.0",

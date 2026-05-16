@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "*.{ts,tsx}"
+      run: npx eslint {staged_files} --no-warn-ignored
+      fail_text: "ESLint failed. Fix the issues above before committing."
+
+    format:
+      glob: "*.{ts,tsx,js,jsx,json,md,yml,yaml,css}"
+      run: npx prettier --check {staged_files}
+      fail_text: "Prettier check failed. Run `npx prettier --write .` to fix."
