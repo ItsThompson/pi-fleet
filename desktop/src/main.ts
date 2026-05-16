@@ -6,6 +6,7 @@ import { createTrayManager } from "./tray.js";
 import { createEmbeddedServer } from "./server.js";
 import { createSoundManager } from "./sound.js";
 import { registerOpenSessionIPC } from "./ipc-open-session.js";
+import { registerSelectDirectoryIPC } from "./ipc-select-directory.js";
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -72,6 +73,7 @@ app.whenReady().then(async () => {
 
 	// Step 6: Register IPC handlers
 	registerOpenSessionIPC();
+	registerSelectDirectoryIPC();
 	registerConfigIPC(configManager);
 
 	// Handle second instance attempts
