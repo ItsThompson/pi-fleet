@@ -62,7 +62,9 @@ function buildConfigManager(
 	};
 	return {
 		get: () => config,
-		set: vi.fn(),
+		set: vi.fn((key: string, value: unknown) => {
+			(config.preferences as Record<string, unknown>)[key] = value;
+		}),
 		dispose: vi.fn(),
 	};
 }
@@ -93,12 +95,12 @@ describe("createWindowManager", () => {
 
 		manager.createWindow("http://127.0.0.1:8314");
 
-		expect(lastConstructorOpts.width).toBe(420);
-		expect(lastConstructorOpts.height).toBe(680);
-		expect(lastConstructorOpts.minWidth).toBe(360);
-		expect(lastConstructorOpts.minHeight).toBe(400);
-		expect(lastConstructorOpts.maxWidth).toBe(600);
-		expect(lastConstructorOpts.maxHeight).toBe(900);
+		expect(lastConstructorOpts.width).toBe(WINDOW_DEFAULTS.width);
+		expect(lastConstructorOpts.height).toBe(WINDOW_DEFAULTS.height);
+		expect(lastConstructorOpts.minWidth).toBe(WINDOW_DEFAULTS.minWidth);
+		expect(lastConstructorOpts.minHeight).toBe(WINDOW_DEFAULTS.minHeight);
+		expect(lastConstructorOpts.maxWidth).toBe(WINDOW_DEFAULTS.maxWidth);
+		expect(lastConstructorOpts.maxHeight).toBe(WINDOW_DEFAULTS.maxHeight);
 	});
 
 	it("createWindow enables contextIsolation and disables nodeIntegration", () => {

@@ -16,6 +16,9 @@ const mockServerInstance = {
 const mockCreateServer = vi.fn(() => mockServerInstance);
 
 vi.mock("electron", () => ({
+	app: {
+		isPackaged: false,
+	},
 	dialog: {
 		showMessageBox: (...args: unknown[]) =>
 			mockDialog.showMessageBox(...(args as [unknown])),
@@ -42,6 +45,7 @@ describe("createEmbeddedServer", () => {
 		expect(mockCreateServer).toHaveBeenCalledWith({
 			port: 8314,
 			host: "127.0.0.1",
+			staticDir: expect.any(String),
 		});
 	});
 
