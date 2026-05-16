@@ -33,9 +33,15 @@ function toContextUsagePayload(
 
 export default function piFleetExtension(pi: ExtensionAPI): void {
   const tracker = createActivityTracker();
-  const client = createHeartbeatClient();
+  const client = createHeartbeatClient({
+    onSessionNotFound: () => {
+      // Server restarted or never received registration: force re-register on next heartbeat
+      registered = false;
+    },
+  });
   const dataCollector = createSessionDataCollector();
 
+  let registered = false;
   let sessionId: string | undefined;
   let extensionCtx: ExtensionContext | undefined;
   let lastKnownTmuxTarget: string | null = null;
@@ -74,7 +80,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
         thinkingLevel,
       };
 
-      let registered = await client.register(registerBody);
+      registered = await client.register(registerBody);
 
       // Start heartbeat loop (retries registration if server wasn't available)
       client.startHeartbeats(async (): Promise<HeartbeatBody> => {

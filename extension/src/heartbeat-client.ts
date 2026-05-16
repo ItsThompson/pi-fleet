@@ -15,6 +15,8 @@ export interface HeartbeatClientDeps {
   /** Injectable timer for testing. Defaults to setInterval/clearInterval. */
   setInterval?: (fn: () => void, ms: number) => ReturnType<typeof globalThis.setInterval>;
   clearInterval?: (id: ReturnType<typeof globalThis.setInterval>) => void;
+  /** Called when heartbeat gets 404 (server doesn't know this session). */
+  onSessionNotFound?: () => void;
 }
 
 export interface HeartbeatClient {
@@ -38,11 +40,12 @@ export function createHeartbeatClient(
   const fetchFn = deps.fetchFn ?? globalThis.fetch;
   const timerSet = deps.setInterval ?? globalThis.setInterval;
   const timerClear = deps.clearInterval ?? globalThis.clearInterval;
+  const onSessionNotFound = deps.onSessionNotFound;
 
   let timer: ReturnType<typeof globalThis.setInterval> | null = null;
   let failures = 0;
 
-  async function post(path: string, body: unknown): Promise<boolean> {
+  async function post(path: string, body: unknown): Promise<{ ok: boolean; status: number }> {
     try {
       const response = await fetchFn(`${BASE_URL}${path}`, {
         method: "POST",
@@ -50,9 +53,9 @@ export function createHeartbeatClient(
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(5000),
       });
-      return response.ok;
+      return { ok: response.ok, status: response.status };
     } catch {
-      return false;
+      return { ok: false, status: 0 };
     }
   }
 
@@ -70,14 +73,18 @@ export function createHeartbeatClient(
 
       try {
         const snapshot = await getSnapshot();
-        const ok = await post(
+        const result = await post(
           `/api/sessions/${snapshot.sessionId}/heartbeat`,
           snapshot,
         );
-        if (ok) {
+        if (result.ok) {
           failures = 0;
         } else {
           failures++;
+          // 404 = server doesn't know this session (restarted or never registered)
+          if (result.status === 404) {
+            onSessionNotFound?.();
+          }
         }
       } catch {
         failures++;
@@ -98,7 +105,8 @@ export function createHeartbeatClient(
     },
 
     async register(body: RegisterBody): Promise<boolean> {
-      return post("/api/sessions/register", body);
+      const result = await post("/api/sessions/register", body);
+      return result.ok;
     },
 
     startHeartbeats(
@@ -121,7 +129,8 @@ export function createHeartbeatClient(
     },
 
     async unregister(sessionId: string): Promise<boolean> {
-      return post(`/api/sessions/${sessionId}/unregister`, {});
+      const result = await post(`/api/sessions/${sessionId}/unregister`, {});
+      return result.ok;
     },
   };
 }
