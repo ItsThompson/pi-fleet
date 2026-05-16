@@ -7,6 +7,7 @@ import { z } from "zod";
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
+import { useNavigationStore } from "@/stores/navigation-store";
 
 // --- Zod schemas (dispatcher-internal, not exported) ---
 
@@ -180,6 +181,9 @@ function dispatchStoreEvent(
 				return;
 			}
 			usePodStore.getState().removePod(result.data.leadSessionId);
+			useNavigationStore
+				.getState()
+				.resetIfViewing("pod", result.data.leadSessionId);
 			break;
 		}
 		case "cluster:created": {
@@ -207,6 +211,9 @@ function dispatchStoreEvent(
 				return;
 			}
 			useClusterStore.getState().removeCluster(result.data.clusterId);
+			useNavigationStore
+				.getState()
+				.resetIfViewing("cluster", result.data.clusterId);
 			break;
 		}
 		case "cluster:reordered": {

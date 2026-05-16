@@ -3,6 +3,7 @@ import { createSSEDispatcher, type DispatchDeps } from "./sse-dispatcher";
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
+import { useNavigationStore } from "@/stores/navigation-store";
 import type {
 	RegisteredSession,
 	Pod,
@@ -68,6 +69,9 @@ describe("sse-dispatcher", () => {
 		useClusterStore.setState({
 			clusters: [],
 			unclustered: { podIds: [], attentionCount: 0 },
+		});
+		useNavigationStore.setState({
+			current: { view: "cluster", id: undefined },
 		});
 	});
 
@@ -140,6 +144,36 @@ describe("sse-dispatcher", () => {
 
 			expect(usePodStore.getState().pods.size).toBe(0);
 		});
+
+		it("pod:dissolved triggers resetIfViewing with correct args", () => {
+			usePodStore.getState().addOrUpdatePod(buildPod());
+			useNavigationStore.getState().navigateTo("pod", "lead-1");
+			const dispatcher = createSSEDispatcher(deps);
+
+			dispatcher.dispatch(
+				"pod:dissolved",
+				JSON.stringify({ leadSessionId: "lead-1" }),
+			);
+
+			const { current } = useNavigationStore.getState();
+			expect(current.view).toBe("cluster");
+			expect(current.id).toBeUndefined();
+		});
+
+		it("pod:dissolved does not reset navigation when viewing a different pod", () => {
+			usePodStore.getState().addOrUpdatePod(buildPod());
+			useNavigationStore.getState().navigateTo("pod", "other-pod");
+			const dispatcher = createSSEDispatcher(deps);
+
+			dispatcher.dispatch(
+				"pod:dissolved",
+				JSON.stringify({ leadSessionId: "lead-1" }),
+			);
+
+			const { current } = useNavigationStore.getState();
+			expect(current.view).toBe("pod");
+			expect(current.id).toBe("other-pod");
+		});
 	});
 
 	describe("cluster events", () => {
@@ -173,6 +207,36 @@ describe("sse-dispatcher", () => {
 			);
 
 			expect(useClusterStore.getState().clusters).toHaveLength(0);
+		});
+
+		it("cluster:deleted triggers resetIfViewing with correct args", () => {
+			useClusterStore.getState().addCluster(buildCluster());
+			useNavigationStore.getState().navigateTo("cluster", "cluster-1");
+			const dispatcher = createSSEDispatcher(deps);
+
+			dispatcher.dispatch(
+				"cluster:deleted",
+				JSON.stringify({ clusterId: "cluster-1" }),
+			);
+
+			const { current } = useNavigationStore.getState();
+			expect(current.view).toBe("cluster");
+			expect(current.id).toBeUndefined();
+		});
+
+		it("cluster:deleted does not reset navigation when viewing a pod inside that cluster", () => {
+			useClusterStore.getState().addCluster(buildCluster());
+			useNavigationStore.getState().navigateTo("pod", "pod-inside-cluster");
+			const dispatcher = createSSEDispatcher(deps);
+
+			dispatcher.dispatch(
+				"cluster:deleted",
+				JSON.stringify({ clusterId: "cluster-1" }),
+			);
+
+			const { current } = useNavigationStore.getState();
+			expect(current.view).toBe("pod");
+			expect(current.id).toBe("pod-inside-cluster");
 		});
 
 		it("routes cluster:reordered to reorderClusters", () => {
