@@ -5,10 +5,10 @@ import {
   HEARTBEAT_INTERVAL_MS,
   REAP_TIMEOUT_MS,
   SSE_KEEPALIVE_MS,
+  UNCLUSTERED_ID,
   getConfigPath,
   getConfigDir,
   getLogPath,
-  getLogDir,
 } from "./index.js";
 import type {
   ActivityStatus,
@@ -21,7 +21,6 @@ import type {
   ClusterConfig,
   PiFleetConfig,
   SSEEvent,
-  SSEEventType,
   TmuxTarget,
   OpenResult,
   OpenFailureReason,
@@ -33,6 +32,7 @@ describe("index barrel exports", () => {
     expect(HEARTBEAT_INTERVAL_MS).toBeDefined();
     expect(REAP_TIMEOUT_MS).toBeDefined();
     expect(SSE_KEEPALIVE_MS).toBeDefined();
+    expect(UNCLUSTERED_ID).toBe("unclustered");
   });
 
   it("exports STATE_PRIORITY with correct keys", () => {
@@ -46,7 +46,6 @@ describe("index barrel exports", () => {
     expect(typeof getConfigPath).toBe("function");
     expect(typeof getConfigDir).toBe("function");
     expect(typeof getLogPath).toBe("function");
-    expect(typeof getLogDir).toBe("function");
   });
 });
 
@@ -173,7 +172,7 @@ describe("type contracts (compile-time verification)", () => {
   });
 
   it("SSEEvent covers all 13 event types", () => {
-    const allTypes: SSEEventType[] = [
+    const allTypes: SSEEvent["type"][] = [
       "session:added",
       "session:updated",
       "session:removed",
