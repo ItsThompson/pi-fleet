@@ -94,6 +94,11 @@ export function createSSERefetch(config: SSERefetchConfig): SSERefetch {
 				console.error(
 					"SSE refetch: gating safety timeout reached, forcing disable",
 				);
+				// Abort in-flight refetchAll so stale data can't overwrite replayed events
+				if (refetchAllController) {
+					refetchAllController.abort();
+					refetchAllController = null;
+				}
 				disableGating();
 			}
 		}, gatingTimeoutMs);

@@ -580,6 +580,36 @@ describe("sse-refetch", () => {
 
 			refetch.dispose();
 		});
+
+		it("aborts in-flight refetchAll when timeout fires so stale data cannot apply", async () => {
+			let resolveDelayedFetch: (() => void) | null = null;
+			let capturedSignal: AbortSignal | null = null;
+
+			mockFetch.mockImplementation((_url: string, init?: RequestInit) => {
+				capturedSignal = init?.signal ?? null;
+				return new Promise((resolve) => {
+					resolveDelayedFetch = () =>
+						resolve({
+							ok: true,
+							status: 200,
+							json: () =>
+								Promise.resolve({ sessions: [], pods: [], clusters: [] }),
+						});
+				});
+			});
+
+			const refetch = createSSERefetch(createMockConfig());
+
+			refetch.refetchAll();
+			expect(capturedSignal).not.toBeNull();
+			expect(capturedSignal!.aborted).toBe(false);
+
+			// Timeout fires: should abort the controller
+			vi.advanceTimersByTime(5000);
+			expect(capturedSignal!.aborted).toBe(true);
+
+			refetch.dispose();
+		});
 	});
 
 	describe("dispose", () => {
