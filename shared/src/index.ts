@@ -24,11 +24,7 @@ export type { PiFleetConfig } from "./types/config.js";
 export type { SSEEvent } from "./types/events.js";
 
 // Types: terminal
-export type {
-	TmuxTarget,
-	OpenResult,
-	OpenFailureReason,
-} from "./types/terminal.js";
+export type { OpenResult, OpenFailureReason } from "./types/terminal.js";
 
 // Assignment algorithm
 export type { AssignmentResult } from "./assignment.js";

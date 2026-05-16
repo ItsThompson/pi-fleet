@@ -1,9 +1,3 @@
-export interface TmuxTarget {
-	session: string;
-	window: string;
-	pane: string;
-}
-
 export type OpenFailureReason =
 	| "not-in-tmux"
 	| "invalid-target"

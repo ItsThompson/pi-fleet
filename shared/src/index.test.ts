@@ -21,7 +21,6 @@ import type {
 	ClusterConfig,
 	PiFleetConfig,
 	SSEEvent,
-	TmuxTarget,
 	OpenResult,
 	OpenFailureReason,
 } from "./index.js";
@@ -188,15 +187,6 @@ describe("type contracts (compile-time verification)", () => {
 			"heartbeat",
 		];
 		expect(allTypes).toHaveLength(13);
-	});
-
-	it("TmuxTarget has session, window, pane fields", () => {
-		const target: TmuxTarget = {
-			session: "main",
-			window: "1",
-			pane: "0",
-		};
-		expect(target.session).toBe("main");
 	});
 
 	it("OpenResult discriminates on ok field", () => {
