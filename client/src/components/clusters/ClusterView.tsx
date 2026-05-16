@@ -25,10 +25,8 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
   const cluster = useClusterStore((state) =>
     state.clusters.find((c) => c.id === clusterId),
   );
+  const clusters = useClusterStore((state) => state.clusters);
   const unclustered = useClusterStore((state) => state.unclustered);
-  const allClusterPodIds = useClusterStore((state) =>
-    state.clusters.map((c) => c.podIds),
-  );
   const [showEditForm, setShowEditForm] = useState(false);
 
   const isUnclustered = clusterId === UNCLUSTERED_ID;
@@ -46,7 +44,7 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
   let podIdSet: Set<string>;
   if (isUnclustered) {
     podIdSet = computeUnclusteredPodIds(allPods, {
-      clusteredPodIds: allClusterPodIds,
+      clusteredPodIds: clusters.map((c) => c.podIds),
       unclusteredPodIds: unclustered.podIds,
     });
   } else {
