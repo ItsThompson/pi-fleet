@@ -1,4 +1,4 @@
-import type { TmuxTarget, OpenResult } from "@pi-fleet/shared";
+import type { OpenResult } from "@pi-fleet/shared";
 
 /** Allowlist of terminal apps safe for osascript activation */
 export const TERMINAL_APP_ALLOWLIST = [
@@ -24,48 +24,33 @@ export interface TerminalOpenerDeps {
 }
 
 /**
- * Parse a tmux target string (format: "session:window.pane").
- * Fix #3: Accepts non-numeric session names and window identifiers.
+ * Resolve the session name from a stable tmux pane ID (e.g., "%5").
+ * Also validates that the pane still exists: if the pane is gone,
+ * tmux will return an error.
+ *
+ * Returns the session name or null if the pane no longer exists.
  */
-export function parseTmuxTarget(raw: string): TmuxTarget | null {
-	// Format: session:window.pane
-	// Session can be anything (including hyphens, dots in name)
-	// Window can be non-numeric (e.g., "dev")
-	// Pane is always numeric
-	const match = raw.match(/^(.+):(.+)\.(\d+)$/);
-	if (!match) {
-		return null;
-	}
-	return { session: match[1], window: match[2], pane: match[3] };
-}
-
-/**
- * Format a TmuxTarget back to the "session:window.pane" string.
- */
-export function formatTarget(target: TmuxTarget): string {
-	return `${target.session}:${target.window}.${target.pane}`;
-}
-
-/**
- * Validate that the target pane exists in tmux.
- * Fix #7: Prevents switching to dead panes.
- */
-export async function validatePane(
-	target: TmuxTarget,
+export async function resolveSession(
+	paneId: string,
 	exec: ExecFn,
-): Promise<boolean> {
-	const fullTarget = formatTarget(target);
+): Promise<string | null> {
 	try {
-		await exec("tmux", ["display-message", "-t", fullTarget, "-p", ""]);
-		return true;
+		const { stdout } = await exec("tmux", [
+			"display-message",
+			"-t",
+			paneId,
+			"-p",
+			"#S",
+		]);
+		const session = stdout.trim();
+		return session || null;
 	} catch {
-		return false;
+		return null;
 	}
 }
 
 /**
  * List tmux clients scoped to the target session.
- * Fix #2: Uses `-t <session>` to avoid counting unrelated clients.
  */
 export async function listClients(
 	session: string,
@@ -85,17 +70,16 @@ export async function listClients(
 }
 
 /**
- * Switch the tmux client to the target pane.
- * All args are passed as array elements to execFile (Fix #6 prevention).
+ * Switch the tmux client to the target pane using its stable pane ID.
+ * All args are passed as array elements to execFile.
  */
 export async function switchClient(
 	client: string,
-	target: TmuxTarget,
+	paneId: string,
 	exec: ExecFn,
 ): Promise<{ ok: boolean; stderr?: string }> {
-	const fullTarget = formatTarget(target);
 	try {
-		await exec("tmux", ["switch-client", "-c", client, "-t", fullTarget]);
+		await exec("tmux", ["switch-client", "-c", client, "-t", paneId]);
 		return { ok: true };
 	} catch (error) {
 		const stderr =
@@ -131,14 +115,12 @@ export async function detectTerminalApp(
 
 /**
  * Activate the terminal window via osascript.
- * Fix #1: Brings the terminal window to front after tmux switch.
  * Validates app name against allowlist to prevent injection.
  */
 export async function activateTerminal(
 	app: TerminalApp,
 	exec: ExecFn,
 ): Promise<boolean> {
-	// Double-check: only activate apps from our validated allowlist
 	if (!TERMINAL_APP_ALLOWLIST.includes(app)) {
 		return false;
 	}
@@ -152,60 +134,53 @@ export async function activateTerminal(
 }
 
 /**
- * Full terminal open flow.
- * Orchestrates: parse → validate → list clients → switch → activate.
+ * Full terminal open flow using stable pane ID.
+ * Orchestrates: resolve session → list clients → switch → activate.
  */
 export async function openTerminal(
-	tmuxTargetStr: string,
+	paneId: string,
 	deps: TerminalOpenerDeps,
 ): Promise<OpenResult> {
 	const { exec, notify } = deps;
 
-	// Step 1: Parse target
-	const target = parseTmuxTarget(tmuxTargetStr);
-	if (!target) {
-		notify("Pi Fleet", "Invalid tmux target format");
-		return { ok: false, reason: "invalid-target" };
-	}
-
-	// Step 2: Validate pane exists (Fix #7)
-	const paneExists = await validatePane(target, exec);
-	if (!paneExists) {
-		notify("Pi Fleet", `Pane no longer exists: ${tmuxTargetStr}`);
+	// Step 1: Resolve session from pane ID (also validates pane exists)
+	const session = await resolveSession(paneId, exec);
+	if (!session) {
+		notify("Pi Fleet", `Pane no longer exists: ${paneId}`);
 		return { ok: false, reason: "pane-not-found" };
 	}
 
-	// Step 3: List clients scoped to session (Fix #2)
+	// Step 2: List clients scoped to session
 	let clientResult: { count: number; first: string | null };
 	try {
-		clientResult = await listClients(target.session, exec);
+		clientResult = await listClients(session, exec);
 	} catch {
 		notify("Pi Fleet", "tmux server not running");
 		return { ok: false, reason: "no-server" };
 	}
 
-	// Step 4: Classify client state
+	// Step 3: Classify client state
 	if (clientResult.count === 0) {
-		notify("Pi Fleet", `No terminal attached to session '${target.session}'`);
+		notify("Pi Fleet", `No terminal attached to session '${session}'`);
 		return { ok: false, reason: "no-client" };
 	}
 
 	if (clientResult.count > 1) {
 		notify(
 			"Pi Fleet",
-			`Multiple terminals on session '${target.session}'; detach extras`,
+			`Multiple terminals on session '${session}'; detach extras`,
 		);
 		return { ok: false, reason: "multi-client" };
 	}
 
-	// Step 5: Switch client
-	const switchResult = await switchClient(clientResult.first!, target, exec);
+	// Step 4: Switch client using pane ID directly
+	const switchResult = await switchClient(clientResult.first!, paneId, exec);
 	if (!switchResult.ok) {
 		notify("Pi Fleet", `tmux switch failed: ${switchResult.stderr}`);
 		return { ok: false, reason: "switch-failed" };
 	}
 
-	// Step 6: Activate terminal window (Fix #1)
+	// Step 5: Activate terminal window
 	const terminalApp = await detectTerminalApp(exec);
 	if (terminalApp) {
 		const activated = await activateTerminal(terminalApp, exec);

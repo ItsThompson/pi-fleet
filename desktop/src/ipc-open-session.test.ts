@@ -27,12 +27,12 @@ describe("IPC open-session flow (integration)", () => {
 	});
 
 	it("resolves tmuxTarget from server and calls openTerminal", async () => {
-		// Register a session with a tmux target
+		// Register a session with a stable pane ID
 		server.registry.register({
 			sessionId: "test-sess",
 			pid: 1000,
 			cwd: "/tmp/project",
-			tmuxTarget: "main:1.0",
+			tmuxTarget: "%5",
 			startTime: new Date().toISOString(),
 		});
 
@@ -48,13 +48,13 @@ describe("IPC open-session flow (integration)", () => {
 
 		expect(response.status).toBe(200);
 		const data = (await response.json()) as { tmuxTarget: string };
-		expect(data.tmuxTarget).toBe("main:1.0");
+		expect(data.tmuxTarget).toBe("%5");
 
 		// Now simulate the terminal opener with the resolved target
 		const notifications: Array<{ title: string; body: string }> = [];
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };

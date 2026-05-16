@@ -1,8 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
-	parseTmuxTarget,
-	formatTarget,
-	validatePane,
+	resolveSession,
 	listClients,
 	switchClient,
 	detectTerminalApp,
@@ -69,99 +67,50 @@ function buildDeps(overrides?: {
 	return { exec, notify, notifications };
 }
 
-describe("parseTmuxTarget", () => {
-	it("parses standard numeric target", () => {
-		const result = parseTmuxTarget("main:1.0");
-		expect(result).toEqual({ session: "main", window: "1", pane: "0" });
+describe("resolveSession", () => {
+	it("returns session name when pane exists", async () => {
+		const exec = buildExec({ "display-message": { stdout: "main\n" } });
+		const result = await resolveSession("%5", exec);
+		expect(result).toBe("main");
 	});
 
-	it("handles non-numeric session names", () => {
-		const result = parseTmuxTarget("my-project:dev.2");
-		expect(result).toEqual({ session: "my-project", window: "dev", pane: "2" });
-	});
-
-	it("handles numeric session names", () => {
-		const result = parseTmuxTarget("0:0.0");
-		expect(result).toEqual({ session: "0", window: "0", pane: "0" });
-	});
-
-	it("handles complex session names with dots", () => {
-		const result = parseTmuxTarget("my.project:1.0");
-		expect(result).toEqual({ session: "my.project", window: "1", pane: "0" });
-	});
-
-	it("handles session with hyphens and underscores", () => {
-		const result = parseTmuxTarget("work_env-2:3.1");
-		expect(result).toEqual({ session: "work_env-2", window: "3", pane: "1" });
-	});
-
-	it("returns null for invalid format (no colon)", () => {
-		expect(parseTmuxTarget("invalid")).toBeNull();
-	});
-
-	it("returns null for invalid format (no dot)", () => {
-		expect(parseTmuxTarget("main:1")).toBeNull();
-	});
-
-	it("returns null for empty string", () => {
-		expect(parseTmuxTarget("")).toBeNull();
-	});
-
-	it("returns null when pane is not numeric", () => {
-		expect(parseTmuxTarget("main:1.abc")).toBeNull();
-	});
-});
-
-describe("formatTarget", () => {
-	it("formats target back to string", () => {
-		expect(formatTarget({ session: "main", window: "1", pane: "0" })).toBe(
-			"main:1.0",
-		);
-	});
-
-	it("formats non-numeric window", () => {
-		expect(formatTarget({ session: "work", window: "dev", pane: "2" })).toBe(
-			"work:dev.2",
-		);
-	});
-});
-
-describe("validatePane", () => {
-	it("returns true when tmux display-message succeeds", async () => {
-		const exec = buildExec({ "display-message": { stdout: "" } });
-		const result = await validatePane(
-			{ session: "main", window: "1", pane: "0" },
-			exec,
-		);
-		expect(result).toBe(true);
-	});
-
-	it("returns false when tmux display-message fails", async () => {
+	it("returns null when pane does not exist", async () => {
 		const exec = buildFailingExec(["display-message"]);
-		const result = await validatePane(
-			{ session: "main", window: "1", pane: "0" },
-			exec,
-		);
-		expect(result).toBe(false);
+		const result = await resolveSession("%5", exec);
+		expect(result).toBeNull();
 	});
 
-	it("passes the full target string to tmux", async () => {
+	it("returns null when stdout is empty", async () => {
+		const exec = buildExec({ "display-message": { stdout: "" } });
+		const result = await resolveSession("%5", exec);
+		expect(result).toBeNull();
+	});
+
+	it("passes pane ID directly to tmux -t flag", async () => {
 		const calls: string[][] = [];
 		const exec: ExecFn = async (cmd, args) => {
 			calls.push([cmd, ...args]);
-			return { stdout: "", stderr: "" };
+			return { stdout: "dev\n", stderr: "" };
 		};
 
-		await validatePane({ session: "work", window: "dev", pane: "2" }, exec);
+		await resolveSession("%12", exec);
 
 		expect(calls[0]).toEqual([
 			"tmux",
 			"display-message",
 			"-t",
-			"work:dev.2",
+			"%12",
 			"-p",
-			"",
+			"#S",
 		]);
+	});
+
+	it("trims whitespace from session name", async () => {
+		const exec = buildExec({
+			"display-message": { stdout: "  my-session  \n" },
+		});
+		const result = await resolveSession("%0", exec);
+		expect(result).toBe("my-session");
 	});
 });
 
@@ -190,7 +139,7 @@ describe("listClients", () => {
 		expect(result).toEqual({ count: 2, first: "/dev/ttys001" });
 	});
 
-	it("scopes to session with -t flag (Fix #2)", async () => {
+	it("scopes to session with -t flag", async () => {
 		const calls: string[][] = [];
 		const exec: ExecFn = async (cmd, args) => {
 			calls.push([cmd, ...args]);
@@ -213,37 +162,25 @@ describe("listClients", () => {
 describe("switchClient", () => {
 	it("returns ok:true on success", async () => {
 		const exec = buildExec({ "switch-client": { stdout: "" } });
-		const result = await switchClient(
-			"/dev/ttys001",
-			{ session: "main", window: "1", pane: "0" },
-			exec,
-		);
+		const result = await switchClient("/dev/ttys001", "%5", exec);
 		expect(result).toEqual({ ok: true });
 	});
 
 	it("returns ok:false with stderr on failure", async () => {
 		const exec = buildFailingExec(["switch-client"]);
-		const result = await switchClient(
-			"/dev/ttys001",
-			{ session: "main", window: "1", pane: "0" },
-			exec,
-		);
+		const result = await switchClient("/dev/ttys001", "%5", exec);
 		expect(result.ok).toBe(false);
 		expect(result.stderr).toBeDefined();
 	});
 
-	it("passes args as array (Fix #6 prevention)", async () => {
+	it("passes pane ID directly to -t flag", async () => {
 		const calls: string[][] = [];
 		const exec: ExecFn = async (cmd, args) => {
 			calls.push([cmd, ...args]);
 			return { stdout: "", stderr: "" };
 		};
 
-		await switchClient(
-			"/dev/ttys001",
-			{ session: "main", window: "2", pane: "1" },
-			exec,
-		);
+		await switchClient("/dev/ttys001", "%7", exec);
 
 		expect(calls[0]).toEqual([
 			"tmux",
@@ -251,7 +188,7 @@ describe("switchClient", () => {
 			"-c",
 			"/dev/ttys001",
 			"-t",
-			"main:2.1",
+			"%7",
 		]);
 	});
 });
@@ -334,7 +271,6 @@ describe("activateTerminal", () => {
 	});
 
 	it("validates app against allowlist (prevents injection)", () => {
-		// Verify the allowlist contains expected entries
 		expect(TERMINAL_APP_ALLOWLIST).toContain("iTerm2");
 		expect(TERMINAL_APP_ALLOWLIST).toContain("Terminal");
 		expect(TERMINAL_APP_ALLOWLIST).toContain("Alacritty");
@@ -351,13 +287,13 @@ describe("activateTerminal", () => {
 });
 
 describe("openTerminal (full flow)", () => {
-	it("succeeds with valid target, single client, and terminal detected", async () => {
+	it("succeeds with valid pane, single client, and terminal detected", async () => {
 		const calls: string[][] = [];
 		const exec: ExecFn = async (cmd, args) => {
 			calls.push([cmd, ...args]);
 			const key = `${cmd} ${args.join(" ")}`;
 			if (key.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (key.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
@@ -378,21 +314,17 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
 		expect(result).toEqual({ ok: true });
 		expect(notifications).toHaveLength(0);
+
+		// Verify switch-client uses pane ID directly
+		const switchCall = calls.find((call) => call.includes("switch-client"));
+		expect(switchCall).toContain("%5");
 	});
 
-	it("returns invalid-target for unparseable target", async () => {
-		const deps = buildDeps();
-		const result = await openTerminal("invalid", deps);
-
-		expect(result).toEqual({ ok: false, reason: "invalid-target" });
-		expect(deps.notifications[0].body).toContain("Invalid tmux target");
-	});
-
-	it("returns pane-not-found when validation fails", async () => {
+	it("returns pane-not-found when session resolution fails", async () => {
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
 				throw new Error("pane not found");
@@ -404,7 +336,7 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
 		expect(result).toEqual({ ok: false, reason: "pane-not-found" });
 		expect(notifications[0].body).toContain("Pane no longer exists");
@@ -413,7 +345,7 @@ describe("openTerminal (full flow)", () => {
 	it("returns no-server when list-clients throws", async () => {
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (args.includes("list-clients")) {
 				throw new Error("no server");
@@ -425,7 +357,7 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
 		expect(result).toEqual({ ok: false, reason: "no-server" });
 		expect(notifications[0].body).toContain("tmux server not running");
@@ -434,7 +366,7 @@ describe("openTerminal (full flow)", () => {
 	it("returns no-client when zero clients attached", async () => {
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (args.includes("list-clients")) {
 				return { stdout: "", stderr: "" };
@@ -446,7 +378,7 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
 		expect(result).toEqual({ ok: false, reason: "no-client" });
 		expect(notifications[0].body).toContain("No terminal attached");
@@ -455,7 +387,7 @@ describe("openTerminal (full flow)", () => {
 	it("returns multi-client when multiple clients attached", async () => {
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n/dev/ttys002\n", stderr: "" };
@@ -467,7 +399,7 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
 		expect(result).toEqual({ ok: false, reason: "multi-client" });
 		expect(notifications[0].body).toContain("Multiple terminals");
@@ -476,7 +408,7 @@ describe("openTerminal (full flow)", () => {
 	it("returns switch-failed when switch-client errors", async () => {
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
@@ -493,7 +425,7 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
 		expect(result).toEqual({ ok: false, reason: "switch-failed" });
 		expect(notifications[0].body).toContain("tmux switch failed");
@@ -502,7 +434,7 @@ describe("openTerminal (full flow)", () => {
 	it("succeeds even when terminal activation fails (non-fatal)", async () => {
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
@@ -523,9 +455,8 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
-		// Still succeeds: tmux switch worked, activation is non-fatal
 		expect(result).toEqual({ ok: true });
 		expect(notifications[0].body).toContain("Could not bring terminal");
 	});
@@ -533,7 +464,7 @@ describe("openTerminal (full flow)", () => {
 	it("succeeds silently when no terminal app detected", async () => {
 		const exec: ExecFn = async (cmd, args) => {
 			if (args.includes("display-message")) {
-				return { stdout: "", stderr: "" };
+				return { stdout: "main\n", stderr: "" };
 			}
 			if (args.includes("list-clients")) {
 				return { stdout: "/dev/ttys001\n", stderr: "" };
@@ -551,7 +482,7 @@ describe("openTerminal (full flow)", () => {
 		const notify: NotifyFn = (title, body) =>
 			notifications.push({ title, body });
 
-		const result = await openTerminal("main:1.0", { exec, notify });
+		const result = await openTerminal("%5", { exec, notify });
 
 		expect(result).toEqual({ ok: true });
 		expect(notifications).toHaveLength(0);
