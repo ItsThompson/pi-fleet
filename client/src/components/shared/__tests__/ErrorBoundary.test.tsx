@@ -75,7 +75,7 @@ describe("ErrorBoundary", () => {
     );
 
     const boundaryLogCall = consoleErrorSpy.mock.calls.find(
-      (call) =>
+      (call: unknown[]) =>
         typeof call[0] === "string" &&
         call[0].includes("[ErrorBoundary:content]"),
     );
@@ -95,7 +95,7 @@ describe("ErrorBoundary", () => {
     );
 
     const boundaryLogCall = consoleErrorSpy.mock.calls.find(
-      (call) =>
+      (call: unknown[]) =>
         typeof call[0] === "string" &&
         call[0].includes("[ErrorBoundary:sidebar]"),
     );
@@ -110,7 +110,7 @@ describe("ErrorBoundary", () => {
     );
 
     const boundaryLogCall = consoleErrorSpy.mock.calls.find(
-      (call) =>
+      (call: unknown[]) =>
         typeof call[0] === "string" &&
         call[0].includes("[ErrorBoundary:unknown]"),
     );
