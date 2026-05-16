@@ -3,7 +3,10 @@ import type { RegisteredSession } from "@pi-fleet/shared";
 import { UNCLUSTERED_ID } from "@pi-fleet/shared";
 import { usePodStore } from "@/stores/pod-store";
 import { useSessionStore } from "@/stores/session-store";
-import { useClusterStore } from "@/stores/cluster-store";
+import {
+	useDerivedCluster,
+	useDerivedUnclustered,
+} from "@/lib/derived-clusters";
 import { useFilteredPods } from "@/hooks/useFilteredPodGrid";
 import { PodGrid } from "@/components/shared/PodGrid";
 import { PodCard } from "@/components/pods/PodCard";
@@ -11,7 +14,6 @@ import { FilterBadges } from "@/components/attention/FilterBadges";
 import { ClusterHeader } from "@/components/clusters/ClusterHeader";
 import { ClusterForm } from "@/components/clusters/ClusterForm";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { computeUnclusteredPodIds } from "@/lib/cluster-utils";
 import { getServerUrl } from "@/lib/bridge";
 import { deleteCluster } from "@/api/cluster-api";
 
@@ -22,30 +24,21 @@ interface ClusterViewProps {
 export function ClusterView({ clusterId }: ClusterViewProps) {
 	const pods = usePodStore((state) => state.pods);
 	const sessions = useSessionStore((state) => state.sessions);
-	const cluster = useClusterStore((state) =>
-		state.clusters.find((c) => c.id === clusterId),
-	);
-	const clusters = useClusterStore((state) => state.clusters);
-	const unclustered = useClusterStore((state) => state.unclustered);
+	const derivedCluster = useDerivedCluster(clusterId);
+	const derivedUnclustered = useDerivedUnclustered();
 	const [showEditForm, setShowEditForm] = useState(false);
 
 	const isUnclustered = clusterId === UNCLUSTERED_ID;
 
-	if (!isUnclustered && !cluster) {
+	if (!isUnclustered && !derivedCluster) {
 		return <div className="p-4 text-muted-foreground">Cluster not found.</div>;
 	}
 
 	// Determine which pod IDs belong to this view
 	const allPods = Array.from(pods.values());
-	let podIdSet: Set<string>;
-	if (isUnclustered) {
-		podIdSet = computeUnclusteredPodIds(allPods, {
-			clusteredPodIds: clusters.map((c) => c.podIds),
-			unclusteredPodIds: unclustered.podIds,
-		});
-	} else {
-		podIdSet = new Set(cluster!.podIds);
-	}
+	const podIdSet = isUnclustered
+		? new Set(derivedUnclustered.podIds)
+		: new Set(derivedCluster!.podIds);
 
 	const clusterPods = allPods.filter((pod) => podIdSet.has(pod.leadSessionId));
 
@@ -71,12 +64,15 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
 			return;
 		}
 		const confirmed = window.confirm(
-			`Delete cluster "${cluster!.name}"? Pods will move to Unclustered.`,
+			`Delete cluster "${derivedCluster!.definition.name}"? Pods will move to Unclustered.`,
 		);
 		if (!confirmed) {
 			return;
 		}
-		const result = await deleteCluster(getServerUrl(), cluster!.id);
+		const result = await deleteCluster(
+			getServerUrl(),
+			derivedCluster!.definition.id,
+		);
 		if (!result.ok) {
 			console.error("Failed to delete cluster:", result.error);
 		}
@@ -88,7 +84,7 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
 				<h2 className="text-lg font-semibold mb-4">Unclustered</h2>
 			) : (
 				<ClusterHeader
-					cluster={cluster!}
+					cluster={derivedCluster!}
 					manualCount={manualCount}
 					onEdit={() => setShowEditForm(true)}
 					onDelete={handleDelete}
@@ -120,7 +116,7 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
 
 			{showEditForm && !isUnclustered && (
 				<ClusterForm
-					cluster={cluster!}
+					cluster={derivedCluster!.definition}
 					onClose={() => setShowEditForm(false)}
 				/>
 			)}

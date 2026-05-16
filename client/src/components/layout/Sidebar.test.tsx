@@ -70,11 +70,29 @@ describe("Sidebar", () => {
 	});
 
 	it("shows attention badge on pods", () => {
-		const pods = new Map([["lead-1", buildPod({ attentionCount: 3 })]]);
+		const pods = new Map([
+			[
+				"lead-1",
+				buildPod({
+					leadSessionId: "lead-1",
+					memberSessionIds: ["lead-1", "sub-1", "sub-2"],
+					attentionCount: 3,
+				}),
+			],
+		]);
+		const sessions = new Map([
+			["lead-1", buildSession({ sessionId: "lead-1", activity: "idle" })],
+			[
+				"sub-1",
+				buildSession({ sessionId: "sub-1", activity: "pending_approval" }),
+			],
+			["sub-2", buildSession({ sessionId: "sub-2", activity: "idle" })],
+		]);
 		usePodStore.setState({ pods });
+		useSessionStore.setState({ sessions, activityChangedAt: new Map() });
 
 		render(<Sidebar />);
-		// Badge appears on both cluster section and pod row
+		// Badge appears on both cluster section (derived attention) and pod row
 		const badges = screen.getAllByText("3");
 		expect(badges.length).toBe(2);
 	});

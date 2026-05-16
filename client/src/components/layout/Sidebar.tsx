@@ -4,7 +4,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { usePodStore } from "@/stores/pod-store";
-import { useClusterStore } from "@/stores/cluster-store";
+import { useDerivedClusters } from "@/lib/derived-clusters";
 import { ClusterSection } from "@/components/clusters/ClusterSection";
 import { ClusterForm } from "@/components/clusters/ClusterForm";
 import {
@@ -19,8 +19,7 @@ import type { Pod } from "@pi-fleet/shared";
 
 export function Sidebar() {
 	const pods = usePodStore((state) => state.pods);
-	const clusters = useClusterStore((state) => state.clusters);
-	const unclustered = useClusterStore((state) => state.unclustered);
+	const { clusters, unclustered } = useDerivedClusters();
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
 	const allPods = Array.from(pods.values());
@@ -30,22 +29,10 @@ export function Sidebar() {
 		return allPods.filter((pod) => podIdSet.has(pod.leadSessionId));
 	}
 
-	function computeAttentionCount(clusterPods: Pod[]): number {
-		return clusterPods.reduce((sum, pod) => sum + pod.attentionCount, 0);
-	}
-
 	const unclusteredPods = getPodsForIds(unclustered.podIds);
-	const assignedPodIds = new Set([
-		...clusters.flatMap((cluster) => cluster.podIds),
-		...unclustered.podIds,
-	]);
-	const orphanPods = allPods.filter(
-		(pod) => !assignedPodIds.has(pod.leadSessionId),
-	);
-	const allUnclusteredPods = [...unclusteredPods, ...orphanPods];
 
 	const sortableClusterIds = clusters.map(
-		(cluster) => `cluster-sort-${cluster.id}`,
+		(derived) => `cluster-sort-${derived.definition.id}`,
 	);
 
 	return (
@@ -69,20 +56,20 @@ export function Sidebar() {
 						items={sortableClusterIds}
 						strategy={verticalListSortingStrategy}
 					>
-						{clusters.map((cluster) => {
-							const clusterPods = getPodsForIds(cluster.podIds);
+						{clusters.map((derived) => {
+							const clusterPods = getPodsForIds(derived.podIds);
 							return (
 								<SortableCluster
-									key={cluster.id}
-									clusterId={cluster.id}
-									name={cluster.name}
+									key={derived.definition.id}
+									clusterId={derived.definition.id}
+									name={derived.definition.name}
 								>
-									<DroppableCluster clusterId={cluster.id}>
+									<DroppableCluster clusterId={derived.definition.id}>
 										<ClusterSection
-											name={cluster.name}
-											clusterId={cluster.id}
+											name={derived.definition.name}
+											clusterId={derived.definition.id}
 											pods={clusterPods}
-											attentionCount={computeAttentionCount(clusterPods)}
+											attentionCount={derived.attentionCount}
 										/>
 									</DroppableCluster>
 								</SortableCluster>
@@ -94,8 +81,8 @@ export function Sidebar() {
 						<ClusterSection
 							name="Unclustered"
 							clusterId={null}
-							pods={allUnclusteredPods}
-							attentionCount={computeAttentionCount(allUnclusteredPods)}
+							pods={unclusteredPods}
+							attentionCount={unclustered.attentionCount}
 						/>
 					</DroppableCluster>
 				</ScrollArea>

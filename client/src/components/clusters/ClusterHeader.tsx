@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FolderOpen, Users, Pencil, Trash2 } from "lucide-react";
-import type { ClusterDefinition } from "@pi-fleet/shared";
+import type { DerivedCluster } from "@/lib/derived-clusters";
 
 interface ClusterHeaderProps {
-	cluster: ClusterDefinition & { podIds: string[]; attentionCount: number };
+	cluster: DerivedCluster;
 	manualCount: number;
 	onEdit: () => void;
 	onDelete: () => void;
@@ -20,7 +20,7 @@ export function ClusterHeader({
 		<div className="flex items-start justify-between mb-4">
 			<div>
 				<div className="flex items-center gap-2">
-					<h2 className="text-lg font-semibold">{cluster.name}</h2>
+					<h2 className="text-lg font-semibold">{cluster.definition.name}</h2>
 					{cluster.attentionCount > 0 && (
 						<Badge variant="destructive" className="text-xs">
 							{cluster.attentionCount} needs attention
@@ -28,10 +28,12 @@ export function ClusterHeader({
 					)}
 				</div>
 
-				{cluster.directories.length > 0 && (
+				{cluster.definition.directories.length > 0 && (
 					<div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
 						<FolderOpen className="h-3.5 w-3.5 shrink-0" />
-						<span className="truncate">{cluster.directories.join(", ")}</span>
+						<span className="truncate">
+							{cluster.definition.directories.join(", ")}
+						</span>
 					</div>
 				)}
 
