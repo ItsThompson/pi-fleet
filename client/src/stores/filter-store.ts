@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import type { ActivityStatus, Pod, RegisteredSession } from "@pi-fleet/shared";
 
-/** Activity states that constitute "needs attention" */
-const ATTENTION_STATES: Set<ActivityStatus> = new Set(["pending_approval", "idle"]);
-
 interface FilterStore {
   /** Active state filters (empty = show all) */
   activeFilters: Set<ActivityStatus>;
@@ -57,5 +54,3 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
     });
   },
 }));
-
-export { ATTENTION_STATES };

@@ -9,6 +9,7 @@ import { FilterBadges } from "@/components/attention/FilterBadges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Layers } from "lucide-react";
 import type { RegisteredSession } from "@pi-fleet/shared";
+import { isAttentionState } from "@pi-fleet/shared";
 
 function EmptyState() {
   return (
@@ -57,10 +58,10 @@ function AllPodsView() {
     : allPods;
 
   const attentionPods = filteredPods.filter(
-    (pod) => pod.state === "pending_approval" || pod.state === "idle",
+    (pod) => isAttentionState(pod.state),
   );
   const workingPods = filteredPods.filter(
-    (pod) => pod.state !== "pending_approval" && pod.state !== "idle",
+    (pod) => !isAttentionState(pod.state),
   );
 
   return (

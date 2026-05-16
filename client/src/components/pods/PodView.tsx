@@ -1,4 +1,5 @@
 import type { Pod, RegisteredSession, ActivityStatus } from "@pi-fleet/shared";
+import { isAttentionState } from "@pi-fleet/shared";
 import { useSessionStore } from "@/stores/session-store";
 import { useFilterStore } from "@/stores/filter-store";
 import { SessionCard } from "@/components/sessions/SessionCard";
@@ -7,10 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PodViewProps {
   pod: Pod;
-}
-
-function needsAttention(activity: ActivityStatus): boolean {
-  return activity === "pending_approval" || activity === "idle";
 }
 
 export function PodView({ pod }: PodViewProps) {
@@ -29,8 +26,8 @@ export function PodView({ pod }: PodViewProps) {
     ? memberSessions.filter((session) => passesFilter(session))
     : memberSessions;
 
-  const attentionSessions = filteredSessions.filter((session) => needsAttention(session.activity));
-  const workingSessions = filteredSessions.filter((session) => !needsAttention(session.activity));
+  const attentionSessions = filteredSessions.filter((session) => isAttentionState(session.activity));
+  const workingSessions = filteredSessions.filter((session) => !isAttentionState(session.activity));
 
   const isMultiMember = pod.memberSessionIds.length > 1;
 

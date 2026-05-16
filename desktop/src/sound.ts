@@ -1,8 +1,7 @@
 import { shell } from "electron";
+import { isAttentionState } from "@pi-fleet/shared";
+import type { ActivityStatus } from "@pi-fleet/shared";
 import type { ConfigManager } from "./config.js";
-
-/** States that trigger attention sounds */
-const ATTENTION_STATES = new Set(["pending_approval", "idle"]);
 
 export interface SoundManager {
   /**
@@ -36,7 +35,7 @@ export function createSoundManager(deps: SoundManagerDeps): SoundManager {
 
     // Only fire on transition INTO an attention state
     // (not when staying in the same state on repeated heartbeats)
-    if (ATTENTION_STATES.has(activity) && previousState !== activity) {
+    if (isAttentionState(activity as ActivityStatus) && previousState !== activity) {
       playSound();
     }
   }

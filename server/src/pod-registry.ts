@@ -1,5 +1,5 @@
 import type { Pod, ActivityStatus, RegisteredSession } from "@pi-fleet/shared";
-import { STATE_PRIORITY } from "@pi-fleet/shared";
+import { STATE_PRIORITY, isAttentionState } from "@pi-fleet/shared";
 import type { SessionRegistry } from "./session-registry.js";
 
 export type PodEvent =
@@ -342,7 +342,7 @@ export class PodRegistry {
       memberSessionIds: [session.sessionId],
       displayName: this.computeDisplayName(session),
       state: session.activity,
-      attentionCount: this.isAttentionState(session.activity) ? 1 : 0,
+      attentionCount: isAttentionState(session.activity) ? 1 : 0,
     };
   }
 
@@ -370,10 +370,6 @@ export class PodRegistry {
    * Count of members with pending_approval or idle (states needing attention).
    */
   private computeAttentionCount(members: RegisteredSession[]): number {
-    return members.filter((m) => this.isAttentionState(m.activity)).length;
-  }
-
-  private isAttentionState(activity: ActivityStatus): boolean {
-    return activity === "pending_approval" || activity === "idle";
+    return members.filter((m) => isAttentionState(m.activity)).length;
   }
 }
