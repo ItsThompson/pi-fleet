@@ -18,6 +18,9 @@
 		"lint": "eslint '**/*.{ts,tsx}' --ignore-pattern '**/dist/**'",
 		"app": "turbo build && npm start --prefix desktop",
 		"dist": "turbo build && npm run dist --prefix desktop",
+		"patch": "scripts/tag-release.sh patch",
+		"minor": "scripts/tag-release.sh minor",
+		"major": "scripts/tag-release.sh major",
 		"prepare": "lefthook install"
 	},
 	"packageManager": "npm@10.8.2",

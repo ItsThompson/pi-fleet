@@ -77,13 +77,23 @@ This builds all packages, then starts Electron with the embedded server and clie
 
 ## Distribution
 
-Create a macOS DMG:
+Releases are automated via GitHub Actions. To cut a new release:
+
+```bash
+npm run patch   # patch bump (0.1.0 → 0.1.1)
+npm run minor   # minor bump (0.1.0 → 0.2.0)
+npm run major   # major bump (0.1.0 → 1.0.0)
+```
+
+This bumps versions across all workspaces, commits, tags, and pushes. The CD workflow then builds the macOS arm64 DMG and publishes a GitHub release with auto-generated notes.
+
+To build a local DMG without releasing:
 
 ```bash
 npm run dist
 ```
 
-Uses electron-builder. Output lands in `desktop/dist/`.
+Output lands in `desktop/dist/`. Builds are currently unsigned (`identity: null`).
 
 ## Install the Pi Extension
 

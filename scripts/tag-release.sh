@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Don't run this directly. Use /release in pi-coding-agent, which orchestrates
-# the full flow: changelog review, bump confirmation, this script, and
-# the GitHub release draft.
+# Tag a new release: validate state, bump versions, commit, tag, push.
+# The actual build and GitHub release are handled by the CD workflow.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -9,19 +8,14 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
-cleanup() {
-  if [[ $? -ne 0 ]]; then
-    echo "Release failed. Restoring working tree..."
-    git checkout -- .
-  fi
-}
-trap cleanup EXIT
-
 # --- Validate arguments ---
 
 BUMP_TYPE="${1:-}"
 if [[ ! "$BUMP_TYPE" =~ ^(patch|minor|major)$ ]]; then
-  echo "Usage: scripts/release.sh <patch|minor|major>"
+  echo "Usage: scripts/tag-release.sh <patch|minor|major>"
+  echo ""
+  echo "Bumps all workspace versions, commits, tags, and pushes."
+  echo "The CD workflow handles building and publishing the release."
   exit 1
 fi
 
@@ -30,6 +24,13 @@ fi
 BRANCH=$(git branch --show-current)
 if [[ "$BRANCH" != "main" ]]; then
   echo "Error: releases must be from main (currently on $BRANCH)."
+  exit 1
+fi
+
+# --- Check for clean working tree ---
+
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "Error: working tree is not clean. Commit or stash changes first."
   exit 1
 fi
 
@@ -43,31 +44,16 @@ if [[ "$LOCAL" != "$REMOTE" ]]; then
   exit 1
 fi
 
-# --- Check for clean working tree ---
-
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "Error: working tree is not clean. Commit or stash changes first."
-  exit 1
-fi
-
-# --- Check for commits since last tag ---
+# --- Determine current version from latest tag ---
 
 LATEST_TAG=$(git tag --sort=-v:refname | head -1)
 if [ -z "$LATEST_TAG" ]; then
-  # First release: use initial commit as base
   echo "No existing tags found. This will be the first release."
-  CURRENT="0.0.0"
-  COMMITS=$(git log --oneline)
+  CURRENT=$(node -p "require('./package.json').version")
 else
   CURRENT="${LATEST_TAG#v}"
   if [[ ! "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "Error: latest tag $LATEST_TAG is not valid semver (got $CURRENT)."
-    exit 1
-  fi
-
-  PKG_VERSION=$(node -p "require('./package.json').version")
-  if [[ "$CURRENT" != "$PKG_VERSION" ]]; then
-    echo "Error: latest tag ($CURRENT) doesn't match package.json ($PKG_VERSION)."
     exit 1
   fi
 
@@ -91,46 +77,17 @@ esac
 NEW_VERSION="$MAJOR.$MINOR.$PATCH"
 echo "Releasing v$NEW_VERSION ($BUMP_TYPE bump from $CURRENT)"
 
-# --- Run tests and lint ---
-
-echo "Running tests and lint..."
-npm test
-npm run lint
-
 # --- Bump all package.json versions (root + workspaces) ---
 
-PKG_VERSION=$(node -p "require('./package.json').version")
-if [[ "$PKG_VERSION" != "$NEW_VERSION" ]]; then
-  npm version "$NEW_VERSION" --no-git-tag-version --include-workspace-root --workspaces
-else
-  echo "All packages already at $NEW_VERSION, skipping bump."
-fi
-
-# --- Build distribution ---
-
-echo "Running npm run dist..."
-npm run dist
-
-# --- Verify DMG ---
-
-DMG="desktop/dist/PiFleet-$NEW_VERSION-arm64.dmg"
-if [[ ! -f "$DMG" ]]; then
-  echo "Error: expected DMG not found at $DMG"
-  echo "Contents of desktop/dist:"
-  ls -la desktop/dist/ || true
-  exit 1
-fi
+npm version "$NEW_VERSION" --no-git-tag-version --include-workspace-root --workspaces
 
 # --- Commit, tag, push ---
 
 git add package.json */package.json package-lock.json
-git diff --cached --quiet || git commit -m "chore: release v$NEW_VERSION"
+git commit -m "chore: release v$NEW_VERSION"
 git tag -a "v$NEW_VERSION" -m "v$NEW_VERSION"
 git push --follow-tags
 
 echo ""
-echo "Released v$NEW_VERSION"
-echo "DMG: $DMG"
-echo ""
-echo "Commits in this release:"
-echo "$COMMITS"
+echo "Tagged v$NEW_VERSION and pushed to origin."
+echo "The CD workflow will build the DMG and publish the release."
