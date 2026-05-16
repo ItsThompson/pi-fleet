@@ -26,8 +26,13 @@ function buildSession(overrides?: Partial<RegisteredSession>): RegisteredSession
 describe("SessionCard", () => {
   beforeEach(() => {
     // Mock the piFleet bridge
-    (window as unknown as Record<string, unknown>).piFleet = {
-      openSession: vi.fn(),
+    window.piFleet = {
+      openSession: vi.fn().mockResolvedValue({ ok: true }),
+      getConfig: vi.fn(),
+      setConfig: vi.fn(),
+      onVisibilityChange: vi.fn(),
+      getServerUrl: vi.fn(() => ""),
+      getVersion: vi.fn(() => "1.0.0"),
     };
   });
 
@@ -88,7 +93,7 @@ describe("SessionCard", () => {
     const openButton = screen.getByTitle("Open in terminal");
     await user.click(openButton);
 
-    const bridge = (window as unknown as { piFleet: { openSession: ReturnType<typeof vi.fn> } }).piFleet;
+    const bridge = window.piFleet!;
     expect(bridge.openSession).toHaveBeenCalledWith("sess-abc123");
   });
 });

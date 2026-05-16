@@ -103,8 +103,15 @@ describe("NotificationPanel", () => {
   });
 
   it("Open button triggers IPC via piFleet bridge", () => {
-    const mockOpenSession = vi.fn();
-    (window as unknown as Record<string, unknown>).piFleet = { openSession: mockOpenSession };
+    const mockOpenSession = vi.fn().mockResolvedValue({ ok: true });
+    window.piFleet = {
+      openSession: mockOpenSession,
+      getConfig: vi.fn(),
+      setConfig: vi.fn(),
+      onVisibilityChange: vi.fn(),
+      getServerUrl: vi.fn(() => ""),
+      getVersion: vi.fn(() => "1.0.0"),
+    };
 
     const sessions = new Map([
       ["session-1", buildSession({ sessionId: "session-1", activity: "idle", agentName: "my-agent" })],
@@ -121,7 +128,7 @@ describe("NotificationPanel", () => {
     expect(mockOpenSession).toHaveBeenCalledWith("session-1");
 
     // Cleanup
-    delete (window as unknown as Record<string, unknown>).piFleet;
+    delete window.piFleet;
   });
 
   it("calls onClose when close button clicked", () => {
