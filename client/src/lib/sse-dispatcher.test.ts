@@ -51,14 +51,12 @@ function buildCluster(
 
 describe("sse-dispatcher", () => {
 	let onConnected: ReturnType<typeof vi.fn>;
-	let onAssignmentChanged: ReturnType<typeof vi.fn>;
 	let deps: DispatchDeps;
 	let warnSpy: ReturnType<typeof vi.spyOn>;
 
 	beforeEach(() => {
 		onConnected = vi.fn();
-		onAssignmentChanged = vi.fn();
-		deps = { onConnected, onAssignmentChanged } as unknown as DispatchDeps;
+		deps = { onConnected } as unknown as DispatchDeps;
 		warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
 		useSessionStore.setState({
@@ -258,18 +256,7 @@ describe("sse-dispatcher", () => {
 			expect(clusters[1].id).toBe("a");
 		});
 
-		it("routes cluster:assignment-changed to onAssignmentChanged callback", () => {
-			const dispatcher = createSSEDispatcher(deps);
-
-			dispatcher.dispatch(
-				"cluster:assignment-changed",
-				JSON.stringify({ sessionId: "s1", clusterId: "cluster-1" }),
-			);
-
-			expect(onAssignmentChanged).toHaveBeenCalledOnce();
-		});
-
-		it("updates manualAssignments in cluster store on assignment-changed", () => {
+		it("calls setManualAssignment with correct args on assignment-changed", () => {
 			const dispatcher = createSSEDispatcher(deps);
 
 			dispatcher.dispatch(
@@ -279,6 +266,19 @@ describe("sse-dispatcher", () => {
 
 			const state = useClusterStore.getState();
 			expect(state.manualAssignments).toEqual({ s1: "cluster-1" });
+		});
+
+		it("does not trigger any fetch or refetch on assignment-changed", () => {
+			const fetchSpy = vi.spyOn(globalThis, "fetch");
+			const dispatcher = createSSEDispatcher(deps);
+
+			dispatcher.dispatch(
+				"cluster:assignment-changed",
+				JSON.stringify({ sessionId: "s1", clusterId: "cluster-1" }),
+			);
+
+			expect(fetchSpy).not.toHaveBeenCalled();
+			fetchSpy.mockRestore();
 		});
 
 		it("removes manual assignment when clusterId is null", () => {

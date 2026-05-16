@@ -87,8 +87,6 @@ const connectedEventSchema = z.object({
 export interface DispatchDeps {
 	/** Called on "connected" event to trigger full state refetch */
 	onConnected: () => void;
-	/** Called on "cluster:assignment-changed" to trigger cluster refetch */
-	onAssignmentChanged: () => void;
 }
 
 /**
@@ -125,17 +123,13 @@ export function createSSEDispatcher(deps: DispatchDeps): {
 			return;
 		}
 
-		dispatchStoreEvent(eventType, parsed, deps);
+		dispatchStoreEvent(eventType, parsed);
 	}
 
 	return { dispatch };
 }
 
-function dispatchStoreEvent(
-	eventType: string,
-	parsed: unknown,
-	deps: DispatchDeps,
-): void {
+function dispatchStoreEvent(eventType: string, parsed: unknown): void {
 	switch (eventType) {
 		case "session:added": {
 			const result = sessionEventSchema.safeParse(parsed);
@@ -233,12 +227,11 @@ function dispatchStoreEvent(
 				logInvalid(eventType, result.error.issues);
 				return;
 			}
-			// Update manualAssignments in the cluster store directly
+			// Update manualAssignments directly: derived selectors recompute membership
+			// without a network round-trip (cluster membership is derived client-side)
 			useClusterStore
 				.getState()
 				.setManualAssignment(result.data.sessionId, result.data.clusterId);
-			// Also notify for any additional side effects (e.g., debounced refetch)
-			deps.onAssignmentChanged();
 			break;
 		}
 	}

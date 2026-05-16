@@ -40,7 +40,6 @@ export function useSSE(): SSEConnectionState {
 
 		const dispatcher = createSSEDispatcher({
 			onConnected: () => refetch.refetchAll(),
-			onAssignmentChanged: () => refetch.refetchClusters(),
 		});
 
 		const refetch = createSSERefetch({
