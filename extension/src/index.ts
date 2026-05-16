@@ -43,6 +43,10 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
       if (registerBody) {
         registered = await client.register(registerBody);
       }
+      // Re-report pod ownership after server restart
+      if (registered) {
+        podReporter?.requestInitialState();
+      }
       return registered;
     },
   });
@@ -52,6 +56,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
   let sessionId: string | undefined;
   let extensionCtx: ExtensionContext | undefined;
   let lastKnownTmuxTarget: string | null = null;
+  let podReporter: ReturnType<typeof createPodReporter> | undefined;
 
   // --- Session lifecycle ---
 
@@ -116,7 +121,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
       });
 
       // Start pod reporter: inter-extension protocol for ownership reporting
-      const podReporter = createPodReporter({
+      podReporter = createPodReporter({
         events: pi.events,
         sessionId,
       });

@@ -38,7 +38,7 @@ function buildMockPi() {
         list.push(handler);
         eventHandlers.set(event, list);
       },
-      emit(_event: string, ..._args: unknown[]) {},
+      emit: vi.fn(),
       off() {},
       removeAllListeners() {},
     },
@@ -287,5 +287,38 @@ describe("piFleetExtension (index.ts wiring)", () => {
     await vi.advanceTimersByTimeAsync(5000);
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.turnCount).toBe(3);
+  });
+
+  it("re-reports pod ownership after server restart re-registration", async () => {
+    const { pi, handlers } = buildMockPi();
+    piFleetExtension(pi);
+
+    // Start session (triggers register + requestInitialState)
+    const startHandler = handlers.get("session_start")![0] as (
+      event: unknown,
+      ctx: ExtensionContext,
+    ) => Promise<void>;
+    await startHandler({ type: "session_start", reason: "startup" }, buildMockCtx());
+
+    const emitMock = pi.events.emit as ReturnType<typeof vi.fn>;
+
+    // Verify initial requestInitialState emitted
+    const initialRequests = emitMock.mock.calls.filter(
+      (call: unknown[]) => call[0] === "pi-fleet:request-subagent-registry",
+    );
+    expect(initialRequests).toHaveLength(1);
+
+    // Simulate server restart: heartbeat returns 404
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+    // Then re-register succeeds
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 201 });
+
+    await vi.advanceTimersByTimeAsync(5000);
+
+    // After re-registration, should re-request subagent registry
+    const allRequests = emitMock.mock.calls.filter(
+      (call: unknown[]) => call[0] === "pi-fleet:request-subagent-registry",
+    );
+    expect(allRequests.length).toBeGreaterThan(1);
   });
 });
