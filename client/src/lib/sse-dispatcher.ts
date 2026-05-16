@@ -233,7 +233,11 @@ function dispatchStoreEvent(
 				logInvalid(eventType, result.error.issues);
 				return;
 			}
-			// Assignment changes require cluster refetch (no local state mapping)
+			// Update manualAssignments in the cluster store directly
+			useClusterStore
+				.getState()
+				.setManualAssignment(result.data.sessionId, result.data.clusterId);
+			// Also notify for any additional side effects (e.g., debounced refetch)
 			deps.onAssignmentChanged();
 			break;
 		}

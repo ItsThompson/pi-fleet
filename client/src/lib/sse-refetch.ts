@@ -11,8 +11,11 @@
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
-import type { RegisteredSession, Pod } from "@pi-fleet/shared";
-import type { ClusterWithPods, UnclusteredState } from "@/stores/cluster-store";
+import type {
+	RegisteredSession,
+	Pod,
+	ClusterDefinition,
+} from "@pi-fleet/shared";
 
 export interface SSERefetchConfig {
 	/** Base URL for API calls (e.g., "http://127.0.0.1:8314") */
@@ -173,13 +176,12 @@ export function createSSERefetch(config: SSERefetchConfig): SSERefetch {
 				.getState()
 				.setSessions((sessionsData.sessions ?? []) as RegisteredSession[]);
 			usePodStore.getState().setPods((podsData.pods ?? []) as Pod[]);
-			useClusterStore.getState().setClusters(
-				(clustersData.clusters ?? []) as ClusterWithPods[],
-				(clustersData.unclustered ?? {
-					podIds: [],
-					attentionCount: 0,
-				}) as UnclusteredState,
-			);
+			useClusterStore
+				.getState()
+				.setClusters(
+					(clustersData.clusters ?? []) as ClusterDefinition[],
+					(clustersData.manualAssignments ?? {}) as Record<string, string>,
+				);
 
 			console.debug("SSE refetchAll: complete");
 		} catch (error: unknown) {
@@ -226,13 +228,12 @@ export function createSSERefetch(config: SSERefetchConfig): SSERefetch {
 					return;
 				}
 
-				useClusterStore.getState().setClusters(
-					(data.clusters ?? []) as ClusterWithPods[],
-					(data.unclustered ?? {
-						podIds: [],
-						attentionCount: 0,
-					}) as UnclusteredState,
-				);
+				useClusterStore
+					.getState()
+					.setClusters(
+						(data.clusters ?? []) as ClusterDefinition[],
+						(data.manualAssignments ?? {}) as Record<string, string>,
+					);
 				console.debug("SSE refetchClusters: complete");
 			})
 			.catch((error: unknown) => {

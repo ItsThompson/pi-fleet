@@ -68,7 +68,7 @@ describe("sse-dispatcher", () => {
 		usePodStore.setState({ pods: new Map() });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 		});
 		useNavigationStore.setState({
 			current: { view: "cluster", id: undefined },

@@ -69,11 +69,9 @@ function mockSuccessfulFetch() {
 								name: "Cluster 1",
 								directories: ["/project"],
 								sortOrder: 0,
-								podIds: ["lead-1"],
-								attentionCount: 0,
 							},
 						],
-						unclustered: { podIds: [], attentionCount: 0 },
+						manualAssignments: {},
 					}),
 			});
 		}
@@ -96,7 +94,7 @@ describe("sse-refetch", () => {
 		usePodStore.setState({ pods: new Map() });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 		});
 
 		vi.spyOn(console, "debug").mockImplementation(() => {});
@@ -717,7 +715,7 @@ describe("sse-refetch", () => {
 						json: () =>
 							Promise.resolve({
 								clusters: [],
-								unclustered: { podIds: [], attentionCount: 0 },
+								manualAssignments: {},
 							}),
 					});
 				}
