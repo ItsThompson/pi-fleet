@@ -49,7 +49,7 @@ describe("NotificationPanel", () => {
     ]);
     useSessionStore.setState({ sessions, activityChangedAt: new Map([["session-1", "2025-01-01T00:00:00Z"]]) });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     expect(screen.getByText("No sessions need attention")).toBeInTheDocument();
     expect(screen.getByText("Notifications (0)")).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe("NotificationPanel", () => {
     useSessionStore.setState({ sessions, activityChangedAt });
     usePodStore.setState({ pods });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     expect(screen.getByText("Notifications (2)")).toBeInTheDocument();
     expect(screen.getByText("refactor-agent")).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe("NotificationPanel", () => {
 
     useSessionStore.setState({ sessions, activityChangedAt });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     const entries = screen.getAllByText(/session/);
     // "newer-session" should appear before "older-session"
@@ -122,7 +122,7 @@ describe("NotificationPanel", () => {
 
     useSessionStore.setState({ sessions, activityChangedAt });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     const openButton = screen.getByRole("button", { name: /open/i });
     fireEvent.click(openButton);
@@ -131,16 +131,6 @@ describe("NotificationPanel", () => {
 
     // Cleanup
     delete window.piFleet;
-  });
-
-  it("calls onClose when close button clicked", () => {
-    const onClose = vi.fn();
-    render(<NotificationPanel onClose={onClose} />);
-
-    const closeButton = screen.getByRole("button", { name: /close notifications/i });
-    fireEvent.click(closeButton);
-
-    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("displays cluster name for sessions in a cluster", () => {
@@ -166,7 +156,7 @@ describe("NotificationPanel", () => {
       unclustered: { podIds: [], attentionCount: 0 },
     });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     expect(screen.getByText(/Cluster: Work/)).toBeInTheDocument();
   });
@@ -186,7 +176,7 @@ describe("NotificationPanel", () => {
 
       useSessionStore.setState({ sessions, activityChangedAt });
 
-      render(<NotificationPanel onClose={() => {}} />);
+      render(<NotificationPanel />);
 
       expect(screen.getByText("Notifications (3)")).toBeInTheDocument();
 
@@ -212,7 +202,7 @@ describe("NotificationPanel", () => {
 
       useSessionStore.setState({ sessions, activityChangedAt });
 
-      render(<NotificationPanel onClose={() => {}} />);
+      render(<NotificationPanel />);
 
       expect(screen.getByText("Notifications (2)")).toBeInTheDocument();
 
@@ -224,7 +214,7 @@ describe("NotificationPanel", () => {
     });
 
     it("does not show Clear all button when no entries are visible", () => {
-      render(<NotificationPanel onClose={() => {}} />);
+      render(<NotificationPanel />);
 
       expect(screen.queryByRole("button", { name: /clear all/i })).not.toBeInTheDocument();
     });
@@ -239,7 +229,7 @@ describe("NotificationPanel", () => {
 
       useSessionStore.setState({ sessions, activityChangedAt });
 
-      const { rerender } = render(<NotificationPanel onClose={() => {}} />);
+      const { rerender } = render(<NotificationPanel />);
 
       // Dismiss the notification
       const dismissButton = screen.getByRole("button", { name: /dismiss notification/i });
@@ -253,7 +243,7 @@ describe("NotificationPanel", () => {
         activityChangedAt: new Map([["session-1", "2025-01-01T00:10:00Z"]]),
       });
 
-      rerender(<NotificationPanel onClose={() => {}} />);
+      rerender(<NotificationPanel />);
 
       expect(screen.getByText("Notifications (1)")).toBeInTheDocument();
       expect(screen.getByText("cycling-agent")).toBeInTheDocument();
@@ -269,7 +259,7 @@ describe("NotificationPanel", () => {
 
       useSessionStore.setState({ sessions, activityChangedAt });
 
-      const { rerender } = render(<NotificationPanel onClose={() => {}} />);
+      const { rerender } = render(<NotificationPanel />);
 
       // Clear all
       fireEvent.click(screen.getByRole("button", { name: /clear all/i }));
@@ -288,7 +278,7 @@ describe("NotificationPanel", () => {
         ]),
       });
 
-      rerender(<NotificationPanel onClose={() => {}} />);
+      rerender(<NotificationPanel />);
 
       // New session appears; dismissed session stays hidden
       expect(screen.getByText("Notifications (1)")).toBeInTheDocument();

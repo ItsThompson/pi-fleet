@@ -6,15 +6,10 @@ import { deriveNotificationEntries } from "./derive-notifications";
 import { filterDismissedNotifications } from "./filter-dismissed-notifications";
 import { NotificationItem } from "./NotificationItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { openInTerminal } from "@/lib/bridge";
 
-interface NotificationPanelProps {
-  onClose: () => void;
-}
-
-export function NotificationPanel({ onClose }: NotificationPanelProps) {
+export function NotificationPanel() {
   const sessions = useSessionStore((state) => state.sessions);
   const activityChangedAt = useSessionStore((state) => state.activityChangedAt);
   const pods = usePodStore((state) => state.pods);
@@ -44,16 +39,11 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
         <h3 className="text-sm font-semibold">
           Notifications ({entries.length})
         </h3>
-        <div className="flex items-center gap-1">
-          {entries.length > 0 && (
-            <Button variant="ghost" size="xs" onClick={handleClearAll} className="text-xs">
-              Clear all
-            </Button>
-          )}
-          <Button variant="ghost" size="xs" onClick={onClose} aria-label="Close notifications">
-            <X className="h-3.5 w-3.5" />
+        {entries.length > 0 && (
+          <Button variant="ghost" size="xs" onClick={handleClearAll} className="text-xs">
+            Clear all
           </Button>
-        </div>
+        )}
       </div>
       <ScrollArea className="max-h-96">
         {entries.length > 0 ? (

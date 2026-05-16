@@ -79,7 +79,7 @@ export function Header({ connectionState }: HeaderProps) {
               )}
             </button>
             {panelOpen && (
-              <NotificationPanel onClose={() => setPanelOpen(false)} />
+              <NotificationPanel />
             )}
           </div>
           {/* Connection status */}
