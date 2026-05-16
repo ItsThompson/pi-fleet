@@ -1,6 +1,7 @@
 /** Contract between Electron preload and renderer-side consumers. */
 export interface PiFleetBridge {
 	openSession(sessionId: string): Promise<{ ok: boolean; reason?: string }>;
+	selectDirectory(): Promise<string | null>;
 	getConfig(): Promise<{
 		version: 1;
 		preferences: {

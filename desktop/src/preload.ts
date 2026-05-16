@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld("piFleet", {
 		return ipcRenderer.invoke("pf:open-session", { sessionId });
 	},
 
+	selectDirectory() {
+		return ipcRenderer.invoke("pf:select-directory");
+	},
+
 	getConfig() {
 		return ipcRenderer.invoke("pf:get-config");
 	},
