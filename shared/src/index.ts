@@ -30,6 +30,15 @@ export type {
 	OpenFailureReason,
 } from "./types/terminal.js";
 
+// Assignment algorithm
+export type { AssignmentResult } from "./assignment.js";
+export {
+	assignSessionToCluster,
+	expandTilde,
+	normalizeTrailingSlash,
+	inferHomedir,
+} from "./assignment.js";
+
 // Attention domain
 export { ATTENTION_STATES, isAttentionState } from "./attention.js";
 
