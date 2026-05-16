@@ -1,5 +1,9 @@
 /** Discriminated drag data for distinguishing pod-assignment from cluster-reorder */
 
+import { UNCLUSTERED_ID } from "@pi-fleet/shared";
+
+export { UNCLUSTERED_ID };
+
 export interface PodDragData {
   type: "pod";
   podId: string;
@@ -14,5 +18,3 @@ export interface ClusterDragData {
 }
 
 export type DragData = PodDragData | ClusterDragData;
-
-export const UNCLUSTERED_ID = "unclustered";

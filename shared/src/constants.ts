@@ -9,3 +9,6 @@ export const REAP_TIMEOUT_MS = 15000;
 
 /** SSE keep-alive interval in milliseconds */
 export const SSE_KEEPALIVE_MS = 30000;
+
+/** Sentinel ID for the unclustered pseudo-group */
+export const UNCLUSTERED_ID = "unclustered";

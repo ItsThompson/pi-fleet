@@ -14,7 +14,7 @@ import { useClusterStore } from "@/stores/cluster-store";
 import { usePodStore } from "@/stores/pod-store";
 import { PodDragOverlay } from "./PodDragOverlay";
 import { ClusterDragOverlay } from "./ClusterDragOverlay";
-import type { DragData, PodDragData, ClusterDragData } from "./types";
+import { UNCLUSTERED_ID, type DragData, type PodDragData, type ClusterDragData } from "./types";
 
 interface DndProviderProps {
   children: React.ReactNode;
@@ -50,7 +50,7 @@ export function DndProvider({ children }: DndProviderProps) {
       }
 
       const targetClusterId = overId.replace("cluster-drop-", "");
-      const resolvedTargetId = targetClusterId === "unclustered" ? null : targetClusterId;
+      const resolvedTargetId = targetClusterId === UNCLUSTERED_ID ? null : targetClusterId;
 
       // Skip if dropping on same cluster
       if (resolvedTargetId === podData.sourceClusterId) {

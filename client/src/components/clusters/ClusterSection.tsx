@@ -1,4 +1,4 @@
-import type { Pod } from "@pi-fleet/shared";
+import { UNCLUSTERED_ID, type Pod } from "@pi-fleet/shared";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { PodRow } from "@/components/pods/PodRow";
@@ -21,7 +21,7 @@ export function ClusterSection({ name, clusterId, pods, attentionCount }: Cluste
 
   function handleNavigate(event: React.MouseEvent): void {
     event.stopPropagation();
-    navigateTo("cluster", clusterId ?? "unclustered");
+    navigateTo("cluster", clusterId ?? UNCLUSTERED_ID);
   }
 
   return (

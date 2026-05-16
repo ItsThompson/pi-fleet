@@ -1,5 +1,7 @@
 import { useState } from "react";
 import type { ActivityStatus, RegisteredSession } from "@pi-fleet/shared";
+import { UNCLUSTERED_ID } from "@pi-fleet/shared";
+import { isAttentionState } from "@pi-fleet/shared";
 import { usePodStore } from "@/stores/pod-store";
 import { useSessionStore } from "@/stores/session-store";
 import { useClusterStore } from "@/stores/cluster-store";
@@ -14,10 +16,6 @@ interface ClusterViewProps {
   clusterId: string;
 }
 
-function needsAttention(state: ActivityStatus): boolean {
-  return state === "pending_approval" || state === "idle";
-}
-
 export function ClusterView({ clusterId }: ClusterViewProps) {
   const pods = usePodStore((state) => state.pods);
   const sessions = useSessionStore((state) => state.sessions);
@@ -30,7 +28,7 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
   const activeFilters = useFilterStore((state) => state.activeFilters);
   const [showEditForm, setShowEditForm] = useState(false);
 
-  const isUnclustered = clusterId === "unclustered";
+  const isUnclustered = clusterId === UNCLUSTERED_ID;
 
   if (!isUnclustered && !cluster) {
     return (
@@ -75,8 +73,8 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
     ? clusterPods.filter((pod) => podPassesFilter(pod, sessions))
     : clusterPods;
 
-  const attentionPods = filteredPods.filter((pod) => needsAttention(pod.state));
-  const workingPods = filteredPods.filter((pod) => !needsAttention(pod.state));
+  const attentionPods = filteredPods.filter((pod) => isAttentionState(pod.state));
+  const workingPods = filteredPods.filter((pod) => !isAttentionState(pod.state));
 
   // Count manual assignments (approximate from pod count vs directory matches)
   const manualCount = 0; // This would require server-side info; kept for display

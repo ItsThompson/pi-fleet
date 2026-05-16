@@ -1,5 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
-import type { DragData } from "./types";
+import { UNCLUSTERED_ID, type DragData } from "./types";
 import { cn } from "@/lib/utils";
 
 interface DroppableClusterProps {
@@ -8,7 +8,7 @@ interface DroppableClusterProps {
 }
 
 export function DroppableCluster({ clusterId, children }: DroppableClusterProps) {
-  const droppableId = clusterId ?? "unclustered";
+  const droppableId = clusterId ?? UNCLUSTERED_ID;
 
   const { setNodeRef, isOver, active } = useDroppable({
     id: `cluster-drop-${droppableId}`,
