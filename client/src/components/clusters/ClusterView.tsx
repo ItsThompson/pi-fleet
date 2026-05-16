@@ -1,16 +1,17 @@
 import { useState } from "react";
-import type { ActivityStatus, RegisteredSession } from "@pi-fleet/shared";
+import type { RegisteredSession } from "@pi-fleet/shared";
 import { UNCLUSTERED_ID } from "@pi-fleet/shared";
-import { isAttentionState } from "@pi-fleet/shared";
 import { usePodStore } from "@/stores/pod-store";
 import { useSessionStore } from "@/stores/session-store";
 import { useClusterStore } from "@/stores/cluster-store";
-import { useFilterStore } from "@/stores/filter-store";
+import { useFilteredPods } from "@/hooks/useFilteredPodGrid";
+import { PodGrid } from "@/components/shared/PodGrid";
 import { PodCard } from "@/components/pods/PodCard";
 import { FilterBadges } from "@/components/attention/FilterBadges";
 import { ClusterHeader } from "@/components/clusters/ClusterHeader";
 import { ClusterForm } from "@/components/clusters/ClusterForm";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { computeUnclusteredPodIds } from "@/lib/cluster-utils";
 
 interface ClusterViewProps {
   clusterId: string;
@@ -23,9 +24,10 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
     state.clusters.find((c) => c.id === clusterId),
   );
   const unclustered = useClusterStore((state) => state.unclustered);
+  const allClusterPodIds = useClusterStore((state) =>
+    state.clusters.map((c) => c.podIds),
+  );
   const deleteCluster = useClusterStore((state) => state.deleteCluster);
-  const podPassesFilter = useFilterStore((state) => state.podPassesFilter);
-  const activeFilters = useFilterStore((state) => state.activeFilters);
   const [showEditForm, setShowEditForm] = useState(false);
 
   const isUnclustered = clusterId === UNCLUSTERED_ID;
@@ -38,26 +40,24 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
     );
   }
 
-  // For unclustered: include both server-assigned unclustered pods AND orphans
-  // (pods not referenced by any cluster or the unclustered list)
+  // Determine which pod IDs belong to this view
   const allPods = Array.from(pods.values());
   let podIdSet: Set<string>;
   if (isUnclustered) {
-    const clusters = useClusterStore.getState().clusters;
-    const assignedPodIds = new Set([
-      ...clusters.flatMap((c) => c.podIds),
-      ...unclustered.podIds,
-    ]);
-    const orphanIds = allPods
-      .filter((pod) => !assignedPodIds.has(pod.leadSessionId))
-      .map((pod) => pod.leadSessionId);
-    podIdSet = new Set([...unclustered.podIds, ...orphanIds]);
+    podIdSet = computeUnclusteredPodIds(allPods, {
+      clusteredPodIds: allClusterPodIds,
+      unclusteredPodIds: unclustered.podIds,
+    });
   } else {
     podIdSet = new Set(cluster!.podIds);
   }
-  const clusterPods = Array.from(pods.values()).filter((pod) =>
+
+  const clusterPods = allPods.filter((pod) =>
     podIdSet.has(pod.leadSessionId),
   );
+
+  // Use shared hook for filtering and attention/working split
+  const grid = useFilteredPods(clusterPods);
 
   // Compute all sessions in this cluster's pods for filter badge counts
   const viewSessions = clusterPods.reduce<RegisteredSession[]>((acc, pod) => {
@@ -67,14 +67,6 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
     });
     return acc;
   }, []);
-
-  // Apply filters
-  const filteredPods = activeFilters.size > 0
-    ? clusterPods.filter((pod) => podPassesFilter(pod, sessions))
-    : clusterPods;
-
-  const attentionPods = filteredPods.filter((pod) => isAttentionState(pod.state));
-  const workingPods = filteredPods.filter((pod) => !isAttentionState(pod.state));
 
   // Count manual assignments (approximate from pod count vs directory matches)
   const manualCount = 0; // This would require server-side info; kept for display
@@ -105,43 +97,24 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
         <FilterBadges sessions={viewSessions} />
       </div>
 
-      {attentionPods.length > 0 && (
-        <section className="mb-6">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">
-            Needs Attention ({attentionPods.length})
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {attentionPods.map((pod) => (
-              <PodCard key={pod.leadSessionId} pod={pod} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {workingPods.length > 0 && (
-        <section>
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">
-            Working ({workingPods.length})
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {workingPods.map((pod) => (
-              <PodCard key={pod.leadSessionId} pod={pod} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {filteredPods.length === 0 && clusterPods.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          No pods match the active filters.
-        </p>
-      )}
-
-      {clusterPods.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No pods in this cluster.
-        </p>
-      )}
+      <PodGrid
+        sections={[
+          {
+            title: `Needs Attention (${grid.attentionItems.length})`,
+            items: grid.attentionItems,
+            renderItem: (pod) => <PodCard key={pod.leadSessionId} pod={pod} />,
+          },
+          {
+            title: `Working (${grid.workingItems.length})`,
+            items: grid.workingItems,
+            renderItem: (pod) => <PodCard key={pod.leadSessionId} pod={pod} />,
+          },
+        ]}
+        hasActiveFilters={grid.filteredCount < grid.totalCount}
+        totalCount={grid.totalCount}
+        filteredEmptyMessage="No pods match the active filters."
+        emptyMessage="No pods in this cluster."
+      />
 
       {showEditForm && !isUnclustered && (
         <ClusterForm
