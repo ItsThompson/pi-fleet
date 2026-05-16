@@ -327,9 +327,8 @@ describe("piFleetExtension (index.ts wiring)", () => {
 	});
 
 	it("re-reports pod ownership after server restart re-registration", async () => {
-		const emitSpy = vi.fn();
 		const { pi, handlers } = buildMockPi();
-		(pi.events as { emit: typeof emitSpy }).emit = emitSpy;
+		const emitSpy = pi.events.emit as ReturnType<typeof vi.fn>;
 		piFleetExtension(pi);
 
 		// Start session (triggers register + requestInitialState)
