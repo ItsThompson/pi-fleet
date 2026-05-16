@@ -1,4 +1,4 @@
-import { dialog, ipcMain } from "electron";
+import { BrowserWindow, dialog, ipcMain } from "electron";
 
 /**
  * Register the pf:select-directory IPC handler.
@@ -7,9 +7,15 @@ import { dialog, ipcMain } from "electron";
  */
 export function registerSelectDirectoryIPC(): void {
 	ipcMain.handle("pf:select-directory", async (): Promise<string | null> => {
-		const result = await dialog.showOpenDialog({
-			properties: ["openDirectory"],
-		});
+		const parentWindow = BrowserWindow.getFocusedWindow();
+
+		const result = parentWindow
+			? await dialog.showOpenDialog(parentWindow, {
+					properties: ["openDirectory"],
+				})
+			: await dialog.showOpenDialog({
+					properties: ["openDirectory"],
+				});
 
 		if (result.canceled || result.filePaths.length === 0) {
 			return null;
