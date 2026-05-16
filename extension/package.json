@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "pi": {
     "extensions": [
-      "./dist/index.mjs"
+      "./src/index.ts"
     ]
   },
   "scripts": {
