@@ -12,17 +12,9 @@ import { createActivityTracker } from "./activity-tracker.js";
 import { createHeartbeatClient } from "./heartbeat-client.js";
 import { createSessionDataCollector } from "./session-data.js";
 import { createPodReporter } from "./pod-reporter.js";
-import { captureTmuxTarget, type Exec } from "./tmux-target.js";
-import { execFile } from "node:child_process";
+import { getTmuxPaneId } from "./tmux-target.js";
 
 const LOG_PREFIX = "[pi-fleet]";
-
-const exec: Exec = (cmd, args) =>
-	new Promise((resolve) => {
-		execFile(cmd, args, { timeout: 5000 }, (error, stdout) => {
-			resolve({ stdout: stdout ?? "", code: error ? 1 : 0 });
-		});
-	});
 
 function toContextUsagePayload(
 	usage: ContextUsage | undefined,
@@ -61,7 +53,6 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 	let registered = false;
 	let sessionId: string | undefined;
 	let extensionCtx: ExtensionContext | undefined;
-	let lastKnownTmuxTarget: string | null = null;
 	let podReporter: ReturnType<typeof createPodReporter> | undefined;
 
 	// --- Session lifecycle ---
@@ -72,9 +63,8 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 			sessionId = ctx.sessionManager.getSessionId();
 			const cwd = ctx.cwd;
 
-			// Capture tmux target
-			const tmux = await captureTmuxTarget(process.env, exec);
-			lastKnownTmuxTarget = tmux?.target ?? null;
+			// Read stable pane ID (sync, zero-cost)
+			const tmuxTarget = getTmuxPaneId(process.env);
 
 			// Gather initial data
 			const model = ctx.model?.name ?? undefined;
@@ -91,7 +81,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 				sessionId,
 				pid: process.pid,
 				cwd,
-				tmuxTarget: lastKnownTmuxTarget,
+				tmuxTarget,
 				startTime: new Date().toISOString(),
 				agentName: pi.getSessionName() ?? undefined,
 				subagentId: process.env.SUBAGENT_ID ?? undefined,
@@ -102,17 +92,10 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 
 			registered = await client.register(registerBody);
 
-			// Start heartbeat loop (retries registration if server wasn't available)
 			client.startHeartbeats(async (): Promise<HeartbeatBody> => {
 				// Retry registration until it succeeds
 				if (!registered && registerBody) {
 					registered = await client.register(registerBody);
-				}
-
-				// Refresh tmux target each heartbeat
-				const freshTmux = await captureTmuxTarget(process.env, exec);
-				if (freshTmux) {
-					lastKnownTmuxTarget = freshTmux.target;
 				}
 
 				// Read context usage at heartbeat time
@@ -124,7 +107,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 				return {
 					sessionId: sessionId!,
 					...tracker.snapshot(),
-					tmuxTarget: lastKnownTmuxTarget,
+					tmuxTarget,
 					agentName: pi.getSessionName() ?? undefined,
 					...dataCollector.snapshot(),
 				};

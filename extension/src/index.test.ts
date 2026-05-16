@@ -5,20 +5,6 @@ import type {
 	ExtensionContext,
 } from "@mariozechner/pi-coding-agent";
 
-// Mock execFile to prevent actual subprocess spawning
-vi.mock("node:child_process", () => ({
-	execFile: vi.fn(
-		(
-			_cmd: string,
-			_args: string[],
-			_opts: unknown,
-			cb: (err: Error | null, stdout: string) => void,
-		) => {
-			cb(null, "main:1.0\n");
-		},
-	),
-}));
-
 // Mock fetch globally
 const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
 vi.stubGlobal("fetch", mockFetch);
@@ -92,12 +78,12 @@ describe("piFleetExtension (index.ts wiring)", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		mockFetch.mockClear();
-		process.env.TMUX = "/tmp/tmux-501/default,123,0";
+		process.env.TMUX_PANE = "%5";
 	});
 
 	afterEach(() => {
 		vi.useRealTimers();
-		delete process.env.TMUX;
+		delete process.env.TMUX_PANE;
 		delete process.env.SUBAGENT_ID;
 	});
 
@@ -146,7 +132,7 @@ describe("piFleetExtension (index.ts wiring)", () => {
 		expect(body.sessionId).toBe("test-session-id");
 		expect(body.pid).toBe(process.pid);
 		expect(body.cwd).toBe("/test/project");
-		expect(body.tmuxTarget).toBe("main:1.0");
+		expect(body.tmuxTarget).toBe("%5");
 		expect(body.agentName).toBe("test-session");
 		expect(body.subagentId).toBe("sub-123");
 		expect(body.model).toBe("Claude Sonnet 4");
@@ -171,8 +157,8 @@ describe("piFleetExtension (index.ts wiring)", () => {
 		});
 	});
 
-	it("on session_start: tmuxTarget is null when TMUX env is unset", async () => {
-		delete process.env.TMUX;
+	it("on session_start: tmuxTarget is null when TMUX_PANE env is unset", async () => {
+		delete process.env.TMUX_PANE;
 		const { pi, handlers } = buildMockPi();
 		piFleetExtension(pi);
 
