@@ -17,6 +17,8 @@ export interface HeartbeatClientDeps {
   clearInterval?: (id: ReturnType<typeof globalThis.setInterval>) => void;
   /** Called when heartbeat gets 404 (server doesn't know this session). */
   onSessionNotFound?: () => void;
+  /** Called to re-register immediately when server is reachable but session unknown. */
+  onReregister?: () => Promise<boolean>;
 }
 
 export interface HeartbeatClient {
@@ -41,6 +43,7 @@ export function createHeartbeatClient(
   const timerSet = deps.setInterval ?? globalThis.setInterval;
   const timerClear = deps.clearInterval ?? globalThis.clearInterval;
   const onSessionNotFound = deps.onSessionNotFound;
+  const onReregister = deps.onReregister;
 
   let timer: ReturnType<typeof globalThis.setInterval> | null = null;
   let failures = 0;
@@ -79,14 +82,20 @@ export function createHeartbeatClient(
         );
         if (result.ok) {
           failures = 0;
+        } else if (result.status === 404) {
+          // Server is reachable but doesn't know this session (restarted).
+          // Reset backoff: server is healthy, no reason to back off.
+          failures = 0;
+          onSessionNotFound?.();
+          // Immediately re-register in this tick rather than waiting 5s.
+          if (onReregister) {
+            await onReregister();
+          }
         } else {
           failures++;
-          // 404 = server doesn't know this session (restarted or never registered)
-          if (result.status === 404) {
-            onSessionNotFound?.();
-          }
         }
       } catch {
+        // Connection failed: server unreachable, apply backoff.
         failures++;
       }
 

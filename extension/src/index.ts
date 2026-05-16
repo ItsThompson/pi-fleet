@@ -3,7 +3,7 @@ import type {
   ExtensionContext,
   ContextUsage,
 } from "@mariozechner/pi-coding-agent";
-import type { ContextUsagePayload, HeartbeatBody } from "@pi-fleet/shared";
+import type { ContextUsagePayload, HeartbeatBody, RegisterBody } from "@pi-fleet/shared";
 import { createActivityTracker } from "./activity-tracker.js";
 import { createHeartbeatClient } from "./heartbeat-client.js";
 import { createSessionDataCollector } from "./session-data.js";
@@ -32,11 +32,18 @@ function toContextUsagePayload(
 }
 
 export default function piFleetExtension(pi: ExtensionAPI): void {
+  let registerBody: RegisterBody | undefined;
+
   const tracker = createActivityTracker();
   const client = createHeartbeatClient({
     onSessionNotFound: () => {
-      // Server restarted or never received registration: force re-register on next heartbeat
       registered = false;
+    },
+    onReregister: async () => {
+      if (registerBody) {
+        registered = await client.register(registerBody);
+      }
+      return registered;
     },
   });
   const dataCollector = createSessionDataCollector();
@@ -67,7 +74,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
 
       const contextUsage = toContextUsagePayload(ctx.getContextUsage());
 
-      const registerBody: Parameters<typeof client.register>[0] = {
+      registerBody = {
         sessionId,
         pid: process.pid,
         cwd,
@@ -85,7 +92,7 @@ export default function piFleetExtension(pi: ExtensionAPI): void {
       // Start heartbeat loop (retries registration if server wasn't available)
       client.startHeartbeats(async (): Promise<HeartbeatBody> => {
         // Retry registration until it succeeds
-        if (!registered) {
+        if (!registered && registerBody) {
           registered = await client.register(registerBody);
         }
 

@@ -254,4 +254,101 @@ describe("HeartbeatClient", () => {
       expect(result).toBe(false);
     });
   });
+
+  describe("404 recovery (server restart)", () => {
+    const snapshot = () => ({
+      sessionId: "s1",
+      activity: "idle" as const,
+      lastEventTime: "2026-01-01T00:00:00.000Z",
+    });
+
+    it("resets failures to 0 on 404 (server is reachable)", async () => {
+      // Accumulate failures from connection errors
+      stubFetchReject();
+      const getSnapshot = vi.fn().mockReturnValue(snapshot());
+      client.startHeartbeats(getSnapshot);
+
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(client.failures).toBe(3);
+
+      // Server comes back but doesn't know us (404)
+      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+      await vi.advanceTimersByTimeAsync(computeInterval(3)); // 10s backoff
+      expect(client.failures).toBe(0);
+    });
+
+    it("calls onSessionNotFound on 404", async () => {
+      const onSessionNotFound = vi.fn();
+      client.stopHeartbeats();
+      client = createHeartbeatClient({
+        fetchFn: mockFetch as typeof fetch,
+        onSessionNotFound,
+      });
+
+      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+      const getSnapshot = vi.fn().mockReturnValue(snapshot());
+      client.startHeartbeats(getSnapshot);
+
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(onSessionNotFound).toHaveBeenCalledTimes(1);
+    });
+
+    it("calls onReregister immediately on 404", async () => {
+      const onReregister = vi.fn().mockResolvedValue(true);
+      client.stopHeartbeats();
+      client = createHeartbeatClient({
+        fetchFn: mockFetch as typeof fetch,
+        onReregister,
+      });
+
+      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+      const getSnapshot = vi.fn().mockReturnValue(snapshot());
+      client.startHeartbeats(getSnapshot);
+
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(onReregister).toHaveBeenCalledTimes(1);
+    });
+
+    it("resumes normal 5s interval after 404 recovery", async () => {
+      // Accumulate backoff from connection failures
+      stubFetchReject();
+      const getSnapshot = vi.fn().mockReturnValue(snapshot());
+      client.startHeartbeats(getSnapshot);
+
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS * 3);
+      expect(client.failures).toBe(3);
+
+      // Server returns 404: resets failures
+      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+      await vi.advanceTimersByTimeAsync(computeInterval(3));
+      expect(client.failures).toBe(0);
+
+      // Next tick should fire at normal interval (5s), not backoff
+      stubFetchOk();
+      getSnapshot.mockClear();
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(getSnapshot).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not apply backoff for 404 (only for connection errors)", async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+      const getSnapshot = vi.fn().mockReturnValue(snapshot());
+      client.startHeartbeats(getSnapshot);
+
+      // Multiple 404s should NOT cause backoff
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(client.failures).toBe(0);
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(client.failures).toBe(0);
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(client.failures).toBe(0);
+
+      // Still on 5s cadence (no backoff)
+      getSnapshot.mockClear();
+      await vi.advanceTimersByTimeAsync(HEARTBEAT_INTERVAL_MS);
+      expect(getSnapshot).toHaveBeenCalledTimes(1);
+    });
+  });
 });
