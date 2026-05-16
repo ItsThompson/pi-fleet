@@ -268,6 +268,34 @@ describe("sse-dispatcher", () => {
 
 			expect(onAssignmentChanged).toHaveBeenCalledOnce();
 		});
+
+		it("updates manualAssignments in cluster store on assignment-changed", () => {
+			const dispatcher = createSSEDispatcher(deps);
+
+			dispatcher.dispatch(
+				"cluster:assignment-changed",
+				JSON.stringify({ sessionId: "s1", clusterId: "cluster-1" }),
+			);
+
+			const state = useClusterStore.getState();
+			expect(state.manualAssignments).toEqual({ s1: "cluster-1" });
+		});
+
+		it("removes manual assignment when clusterId is null", () => {
+			useClusterStore.setState({
+				clusters: [],
+				manualAssignments: { s1: "cluster-1" },
+			});
+			const dispatcher = createSSEDispatcher(deps);
+
+			dispatcher.dispatch(
+				"cluster:assignment-changed",
+				JSON.stringify({ sessionId: "s1", clusterId: null }),
+			);
+
+			const state = useClusterStore.getState();
+			expect(state.manualAssignments).toEqual({});
+		});
 	});
 
 	describe("connected event", () => {

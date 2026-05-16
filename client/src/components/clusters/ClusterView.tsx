@@ -3,6 +3,7 @@ import type { RegisteredSession } from "@pi-fleet/shared";
 import { UNCLUSTERED_ID } from "@pi-fleet/shared";
 import { usePodStore } from "@/stores/pod-store";
 import { useSessionStore } from "@/stores/session-store";
+import { useClusterStore } from "@/stores/cluster-store";
 import {
 	useDerivedCluster,
 	useDerivedUnclustered,
@@ -24,6 +25,7 @@ interface ClusterViewProps {
 export function ClusterView({ clusterId }: ClusterViewProps) {
 	const pods = usePodStore((state) => state.pods);
 	const sessions = useSessionStore((state) => state.sessions);
+	const manualAssignments = useClusterStore((state) => state.manualAssignments);
 	const derivedCluster = useDerivedCluster(clusterId);
 	const derivedUnclustered = useDerivedUnclustered();
 	const [showEditForm, setShowEditForm] = useState(false);
@@ -56,8 +58,11 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
 		return acc;
 	}, []);
 
-	// Count manual assignments (approximate from pod count vs directory matches)
-	const manualCount = 0; // This would require server-side info; kept for display
+	// Count manual assignments pointing to this cluster
+	const manualCount = isUnclustered
+		? 0
+		: Object.values(manualAssignments).filter((cId) => cId === clusterId)
+				.length;
 
 	async function handleDelete(): Promise<void> {
 		if (isUnclustered) {

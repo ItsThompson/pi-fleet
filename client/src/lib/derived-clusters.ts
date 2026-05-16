@@ -185,7 +185,7 @@ export function getClusterForPod(
  * Resolve homedir from the first available session cwd.
  * Returns empty string if no sessions are available.
  */
-function useHomedir(sessions: Map<string, RegisteredSession>): string {
+export function useHomedir(sessions: Map<string, RegisteredSession>): string {
 	return useMemo(() => {
 		for (const session of sessions.values()) {
 			const homedir = inferHomedir(session.cwd);
