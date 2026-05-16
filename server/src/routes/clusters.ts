@@ -74,6 +74,7 @@ export function registerClusterRoutes(
 				podIds: unclusteredPodIds,
 				attentionCount: unclusteredAttention,
 			},
+			manualAssignments: clusterStore.getConfig().manualAssignments,
 		});
 	});
 
