@@ -47,6 +47,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        activity: {
+          idle: "#2ea043",
+          processing: "#d29922",
+          "running-tool": "#58a6ff",
+          "pending-approval": "#f85149",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
