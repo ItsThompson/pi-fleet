@@ -1,39 +1,23 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createServer, type PiFleetServer } from "../server.js";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { randomUUID } from "node:crypto";
-import { mkdirSync, rmSync } from "node:fs";
+import {
+  createTestServer,
+  type TestServer,
+} from "../__tests__/test-server-builder.js";
 
 describe("cluster routes", () => {
-  let server: PiFleetServer;
-  let tempDir: string;
+  let testServer: TestServer;
 
   beforeEach(async () => {
-    tempDir = join(tmpdir(), `pi-fleet-cluster-test-${randomUUID()}`);
-    mkdirSync(tempDir, { recursive: true });
-    const configPath = join(tempDir, "config.json");
-
-    server = createServer({
-      port: 0,
-      host: "127.0.0.1",
-      configPath,
-    });
-    await server.app.ready();
+    testServer = await createTestServer();
   });
 
   afterEach(async () => {
-    await server.stop();
-    try {
-      rmSync(tempDir, { recursive: true, force: true });
-    } catch {
-      // ignore
-    }
+    await testServer.cleanup();
   });
 
   describe("POST /api/clusters", () => {
     it("creates a cluster with name", async () => {
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: { name: "Work" },
@@ -48,7 +32,7 @@ describe("cluster routes", () => {
     });
 
     it("creates a cluster with directories", async () => {
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: { name: "Work", directories: ["~/workplace/"] },
@@ -60,7 +44,7 @@ describe("cluster routes", () => {
     });
 
     it("returns 400 for missing name", async () => {
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: {},
@@ -72,14 +56,14 @@ describe("cluster routes", () => {
 
   describe("PATCH /api/clusters/:id", () => {
     it("updates cluster name", async () => {
-      const createRes = await server.app.inject({
+      const createRes = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: { name: "Old" },
       });
       const cluster = createRes.json();
 
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "PATCH",
         url: `/api/clusters/${cluster.id}`,
         payload: { name: "New" },
@@ -90,14 +74,14 @@ describe("cluster routes", () => {
     });
 
     it("updates cluster directories", async () => {
-      const createRes = await server.app.inject({
+      const createRes = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: { name: "Work", directories: ["~/old/"] },
       });
       const cluster = createRes.json();
 
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "PATCH",
         url: `/api/clusters/${cluster.id}`,
         payload: { directories: ["~/new/"] },
@@ -108,7 +92,7 @@ describe("cluster routes", () => {
     });
 
     it("returns 404 for non-existent cluster", async () => {
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "PATCH",
         url: "/api/clusters/nonexistent",
         payload: { name: "Test" },
@@ -120,14 +104,14 @@ describe("cluster routes", () => {
 
   describe("DELETE /api/clusters/:id", () => {
     it("deletes a cluster", async () => {
-      const createRes = await server.app.inject({
+      const createRes = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: { name: "Work" },
       });
       const cluster = createRes.json();
 
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "DELETE",
         url: `/api/clusters/${cluster.id}`,
       });
@@ -135,7 +119,7 @@ describe("cluster routes", () => {
       expect(response.statusCode).toBe(200);
 
       // Verify it's gone
-      const listRes = await server.app.inject({
+      const listRes = await testServer.server.app.inject({
         method: "GET",
         url: "/api/clusters",
       });
@@ -143,7 +127,7 @@ describe("cluster routes", () => {
     });
 
     it("returns 404 for non-existent cluster", async () => {
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "DELETE",
         url: "/api/clusters/nonexistent",
       });
@@ -155,21 +139,21 @@ describe("cluster routes", () => {
   describe("POST /api/clusters/reorder", () => {
     it("reorders clusters", async () => {
       const c1 = (
-        await server.app.inject({
+        await testServer.server.app.inject({
           method: "POST",
           url: "/api/clusters",
           payload: { name: "First" },
         })
       ).json();
       const c2 = (
-        await server.app.inject({
+        await testServer.server.app.inject({
           method: "POST",
           url: "/api/clusters",
           payload: { name: "Second" },
         })
       ).json();
 
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters/reorder",
         payload: { orderedIds: [c2.id, c1.id] },
@@ -177,7 +161,7 @@ describe("cluster routes", () => {
 
       expect(response.statusCode).toBe(200);
 
-      const listRes = await server.app.inject({
+      const listRes = await testServer.server.app.inject({
         method: "GET",
         url: "/api/clusters",
       });
@@ -190,14 +174,14 @@ describe("cluster routes", () => {
   describe("POST /api/clusters/assign", () => {
     it("sets a manual assignment", async () => {
       const cluster = (
-        await server.app.inject({
+        await testServer.server.app.inject({
           method: "POST",
           url: "/api/clusters",
           payload: { name: "Work" },
         })
       ).json();
 
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters/assign",
         payload: { sessionId: "sess-1", clusterId: cluster.id },
@@ -207,7 +191,7 @@ describe("cluster routes", () => {
     });
 
     it("clears a manual assignment with null clusterId", async () => {
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters/assign",
         payload: { sessionId: "sess-1", clusterId: null },
@@ -219,13 +203,13 @@ describe("cluster routes", () => {
 
   describe("GET /api/clusters", () => {
     it("returns clusters with podIds and attentionCount", async () => {
-      await server.app.inject({
+      await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: { name: "Work", directories: ["~/workplace/"] },
       });
 
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "GET",
         url: "/api/clusters",
       });
@@ -242,7 +226,7 @@ describe("cluster routes", () => {
 
     it("assigns pods to clusters by directory matching", async () => {
       // Register a session with a cwd
-      await server.app.inject({
+      await testServer.server.app.inject({
         method: "POST",
         url: "/api/sessions/register",
         payload: {
@@ -255,13 +239,13 @@ describe("cluster routes", () => {
       });
 
       // Create a cluster that matches
-      await server.app.inject({
+      await testServer.server.app.inject({
         method: "POST",
         url: "/api/clusters",
         payload: { name: "Work", directories: ["~/workplace/"] },
       });
 
-      const response = await server.app.inject({
+      const response = await testServer.server.app.inject({
         method: "GET",
         url: "/api/clusters",
       });
