@@ -338,8 +338,23 @@ describe("sse-connection", () => {
       // Advance past the original retry time
       vi.advanceTimersByTime(5000);
 
-      // Should only have 3 instances: original, the one from manual connect, not a retry
+      // Should only have 2 instances: original + manual reconnect (no retry)
       expect(MockEventSource.instances).toHaveLength(2);
+    });
+
+    it("is a no-op after close()", () => {
+      createConnection();
+      connection.connect();
+
+      const es = getLatestEventSource();
+      es.simulateOpen();
+
+      connection.close();
+
+      // Attempt to connect after close: should not create a new EventSource
+      connection.connect();
+
+      expect(MockEventSource.instances).toHaveLength(1);
     });
   });
 
