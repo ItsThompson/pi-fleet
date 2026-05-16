@@ -12,6 +12,8 @@ import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useClusterStore } from "@/stores/cluster-store";
 import { usePodStore } from "@/stores/pod-store";
+import { getServerUrl } from "@/lib/bridge";
+import { assignSession, reorderClusters } from "@/api/cluster-api";
 import { PodDragOverlay } from "./PodDragOverlay";
 import { ClusterDragOverlay } from "./ClusterDragOverlay";
 import { UNCLUSTERED_ID, type DragData, type PodDragData, type ClusterDragData } from "./types";
@@ -22,8 +24,6 @@ interface DndProviderProps {
 
 export function DndProvider({ children }: DndProviderProps) {
   const [activeData, setActiveData] = useState<DragData | null>(null);
-  const assignSession = useClusterStore((state) => state.assignSession);
-  const reorder = useClusterStore((state) => state.reorder);
   const clusters = useClusterStore((state) => state.clusters);
   const pods = usePodStore((state) => state.pods);
 
@@ -57,10 +57,15 @@ export function DndProvider({ children }: DndProviderProps) {
         return;
       }
 
-      // The pod's leadSessionId is the sessionId for assignment
-      assignSession(podData.podId, resolvedTargetId);
+      // Fire-and-forget: SSE will confirm the assignment
+      const baseUrl = getServerUrl();
+      assignSession(baseUrl, podData.podId, resolvedTargetId).then((result) => {
+        if (!result.ok) {
+          console.error("Failed to assign session:", result.error);
+        }
+      });
     },
-    [assignSession],
+    [],
   );
 
   const handleClusterReorder = useCallback(
@@ -86,9 +91,19 @@ export function DndProvider({ children }: DndProviderProps) {
       }
 
       const newOrder = arrayMove(currentIds, oldIndex, newIndex);
-      reorder(newOrder);
+
+      // Optimistic update: reorder in store immediately
+      useClusterStore.getState().reorderClusters(newOrder);
+
+      // Persist to server: SSE will confirm
+      const baseUrl = getServerUrl();
+      reorderClusters(baseUrl, newOrder).then((result) => {
+        if (!result.ok) {
+          console.error("Failed to reorder clusters:", result.error);
+        }
+      });
     },
-    [clusters, reorder],
+    [clusters],
   );
 
   const handleDragEnd = useCallback(
