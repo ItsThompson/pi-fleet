@@ -1014,6 +1014,7 @@ describe("cross-store consistency", () => {
 			);
 			// Session visible again: stateChangedAt advanced past dismissal timestamp
 			expect(bellCountAfter).toBe(1);
+			assertInvariants();
 
 			vi.useRealTimers();
 		});
@@ -1051,6 +1052,7 @@ describe("cross-store consistency", () => {
 			const { current } = useNavigationStore.getState();
 			expect(current.view).toBe("pod");
 			expect(current.id).toBe("other-pod");
+			assertInvariants();
 		});
 
 		it("cluster:deleted resets nav for that cluster", () => {
