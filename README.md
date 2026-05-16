@@ -1,6 +1,6 @@
 # Pi Fleet
 
-A macOS menu-bar dashboard for observing, grouping, and navigating [pi](https://github.com/mariozechner/pi-coding-agent) coding agent sessions. Pi Fleet shows all active sessions on your machine, organizes them hierarchically, surfaces which sessions need your attention, and lets you jump to any session's terminal pane with one click.
+A macOS menu-bar dashboard for observing, grouping, and navigating pi coding agent sessions. Pi Fleet shows all active sessions on your machine, organizes them hierarchically, surfaces which sessions need your attention, and lets you jump to any session's terminal pane with one click.
 
 Pi Fleet is **observation-only**: all agent interaction stays in the terminal.
 

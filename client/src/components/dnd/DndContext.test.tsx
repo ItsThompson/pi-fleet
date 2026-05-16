@@ -197,7 +197,6 @@ describe("DnD Components", () => {
     });
 
     it("calls assignSession when pod is dropped on a different cluster", async () => {
-      const assignSession = vi.fn().mockResolvedValue(true);
       useClusterStore.setState({
         clusters: [
           {
@@ -219,7 +218,6 @@ describe("DnD Components", () => {
         ],
         unclustered: { podIds: [], attentionCount: 0 },
         loading: false,
-        assignSession,
       });
 
       const pods = new Map([
@@ -246,7 +244,6 @@ describe("DnD Components", () => {
     });
 
     it("calls reorder when cluster order changes", () => {
-      const reorder = vi.fn().mockResolvedValue(true);
       useClusterStore.setState({
         clusters: [
           {
@@ -268,7 +265,6 @@ describe("DnD Components", () => {
         ],
         unclustered: { podIds: [], attentionCount: 0 },
         loading: false,
-        reorder,
       });
 
       render(
