@@ -11,6 +11,7 @@
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc --noEmit -p tsconfig.build.json && tsdown",
+		"typecheck": "tsc --noEmit",
 		"start": "node dist/index.mjs",
 		"test": "vitest run --passWithNoTests"
 	},

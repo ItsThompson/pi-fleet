@@ -6,6 +6,7 @@
 	"main": "dist/main.cjs",
 	"scripts": {
 		"build": "tsc --noEmit -p tsconfig.build.json && tsdown",
+		"typecheck": "tsc --noEmit",
 		"start": "node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
 		"dev": "tsdown && node scripts/patch-electron-plist.mjs && electron dist/main.cjs",
 		"postinstall": "node scripts/patch-electron-plist.mjs",

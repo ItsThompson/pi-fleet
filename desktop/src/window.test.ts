@@ -41,7 +41,7 @@ vi.mock("electron", () => {
 /** Simulate the ready-to-show event firing */
 function triggerReadyToShow(): void {
 	const call = mockWindow.once.mock.calls.find(
-		([event]: [string]) => event === "ready-to-show",
+		(args: unknown[]) => args[0] === "ready-to-show",
 	);
 	if (call) {
 		call[1]();

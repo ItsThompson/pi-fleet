@@ -19,4 +19,5 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
+      - run: npx turbo run typecheck
       - run: npm test
