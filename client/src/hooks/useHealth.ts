@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getServerUrl } from "@/lib/bridge";
 
 export interface HealthData {
   status: string;
@@ -9,13 +10,6 @@ export interface HealthData {
   piWatchDetected: boolean;
 }
 
-function getBaseUrl(): string {
-  if (typeof window !== "undefined" && (window as unknown as Record<string, unknown>).piFleet) {
-    return (window as unknown as { piFleet: { getServerUrl: () => string } }).piFleet.getServerUrl();
-  }
-  return "";
-}
-
 /**
  * Fetches server health data once on mount.
  * Used to detect pi-watch conflict and display warnings.
@@ -24,7 +18,7 @@ export function useHealth(): HealthData | null {
   const [health, setHealth] = useState<HealthData | null>(null);
 
   useEffect(() => {
-    const baseUrl = getBaseUrl();
+    const baseUrl = getServerUrl();
     fetch(`${baseUrl}/api/health`)
       .then((res) => {
         if (!res.ok) return null;

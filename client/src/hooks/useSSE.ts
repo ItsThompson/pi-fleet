@@ -3,6 +3,7 @@ import type { SSEEvent, RegisteredSession, Pod, ClusterDefinition } from "@pi-fl
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
+import { getServerUrl } from "@/lib/bridge";
 
 const MAX_BACKOFF_MS = 30_000;
 const INITIAL_BACKOFF_MS = 1_000;
@@ -11,15 +12,6 @@ export interface SSEConnectionState {
   connected: boolean;
   reconnecting: boolean;
   attemptCount: number;
-}
-
-function getBaseUrl(): string {
-  // In production (Electron), use the server URL from the bridge
-  if (typeof window !== "undefined" && (window as unknown as Record<string, unknown>).piFleet) {
-    return (window as unknown as { piFleet: { getServerUrl: () => string } }).piFleet.getServerUrl();
-  }
-  // In development, rely on Vite proxy
-  return "";
 }
 
 async function fetchSessions(baseUrl: string): Promise<RegisteredSession[]> {
@@ -114,7 +106,7 @@ export function useSSE(): SSEConnectionState {
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = getServerUrl();
     const eventSource = new EventSource(`${baseUrl}/api/events`);
     eventSourceRef.current = eventSource;
 

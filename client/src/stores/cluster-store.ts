@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ClusterDefinition } from "@pi-fleet/shared";
+import { getServerUrl } from "@/lib/bridge";
 
 interface ClusterWithPods extends ClusterDefinition {
   podIds: string[];
@@ -71,17 +72,9 @@ interface ClusterStore {
   ) => Promise<boolean>;
 }
 
-function getBaseUrl(override?: string): string {
+function resolveBaseUrl(override?: string): string {
   if (override) return override;
-  if (
-    typeof window !== "undefined" &&
-    (window as unknown as Record<string, unknown>).piFleet
-  ) {
-    return (
-      window as unknown as { piFleet: { getServerUrl: () => string } }
-    ).piFleet.getServerUrl();
-  }
-  return "";
+  return getServerUrl();
 }
 
 export const useClusterStore = create<ClusterStore>((set, get) => ({
@@ -154,7 +147,7 @@ export const useClusterStore = create<ClusterStore>((set, get) => ({
   },
 
   fetchClusters: async (baseUrl?) => {
-    const url = getBaseUrl(baseUrl);
+    const url = resolveBaseUrl(baseUrl);
     set({ loading: true });
     try {
       const response = await fetch(`${url}/api/clusters`);
@@ -174,7 +167,7 @@ export const useClusterStore = create<ClusterStore>((set, get) => ({
   },
 
   createCluster: async (name, directories, baseUrl?) => {
-    const url = getBaseUrl(baseUrl);
+    const url = resolveBaseUrl(baseUrl);
     try {
       const response = await fetch(`${url}/api/clusters`, {
         method: "POST",
@@ -189,7 +182,7 @@ export const useClusterStore = create<ClusterStore>((set, get) => ({
   },
 
   editCluster: async (id, updates, baseUrl?) => {
-    const url = getBaseUrl(baseUrl);
+    const url = resolveBaseUrl(baseUrl);
     try {
       const response = await fetch(`${url}/api/clusters/${id}`, {
         method: "PATCH",
@@ -204,7 +197,7 @@ export const useClusterStore = create<ClusterStore>((set, get) => ({
   },
 
   deleteCluster: async (id, baseUrl?) => {
-    const url = getBaseUrl(baseUrl);
+    const url = resolveBaseUrl(baseUrl);
     try {
       const response = await fetch(`${url}/api/clusters/${id}`, {
         method: "DELETE",
@@ -216,7 +209,7 @@ export const useClusterStore = create<ClusterStore>((set, get) => ({
   },
 
   reorder: async (orderedIds, baseUrl?) => {
-    const url = getBaseUrl(baseUrl);
+    const url = resolveBaseUrl(baseUrl);
     try {
       const response = await fetch(`${url}/api/clusters/reorder`, {
         method: "POST",
@@ -230,7 +223,7 @@ export const useClusterStore = create<ClusterStore>((set, get) => ({
   },
 
   assignSession: async (sessionId, clusterId, baseUrl?) => {
-    const url = getBaseUrl(baseUrl);
+    const url = resolveBaseUrl(baseUrl);
     try {
       const response = await fetch(`${url}/api/clusters/assign`, {
         method: "POST",
