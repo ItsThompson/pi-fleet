@@ -1,6 +1,7 @@
 import type { SSEConnectionState } from "@/hooks/useSSE";
 import { useHealth } from "@/hooks/useHealth";
 import { useSessionStore } from "@/stores/session-store";
+import { useNavigationStore } from "@/stores/navigation-store";
 import { NotificationPanel } from "@/components/attention/NotificationPanel";
 import { AttentionBadge } from "@/components/attention/AttentionBadge";
 import { Bell, Wifi, WifiOff, AlertTriangle } from "lucide-react";
@@ -43,7 +44,13 @@ export function Header({ connectionState }: HeaderProps) {
   return (
     <header className="border-b px-4 py-2 shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
       <div className="flex items-center justify-between">
-        <h1 className="text-sm font-semibold">Pi Fleet</h1>
+        <h1
+          className="text-sm font-semibold cursor-pointer hover:text-foreground/80 transition-colors"
+          style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+          onClick={() => useNavigationStore.getState().navigateTo("cluster")}
+        >
+          Pi Fleet
+        </h1>
         <div className="flex items-center gap-2" style={{ WebkitAppRegion: "no-drag" } as CSSProperties}>
           {/* Notification bell */}
           <div className="relative" ref={panelRef}>
