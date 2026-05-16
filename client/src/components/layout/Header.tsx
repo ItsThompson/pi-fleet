@@ -1,6 +1,7 @@
 import type { SSEConnectionState } from "@/hooks/useSSE";
 import { useHealth } from "@/hooks/useHealth";
 import { useSessionStore } from "@/stores/session-store";
+import { useNotificationDismissStore } from "@/stores/notification-dismiss-store";
 import { useNavigationStore } from "@/stores/navigation-store";
 import { NotificationPanel } from "@/components/attention/NotificationPanel";
 import { AttentionBadge } from "@/components/attention/AttentionBadge";
@@ -11,10 +12,18 @@ interface HeaderProps {
   connectionState: SSEConnectionState;
 }
 
-function computeTotalAttention(sessions: Map<string, { activity: string }>): number {
+function computeVisibleAttentionCount(
+  sessions: Map<string, { activity: string }>,
+  activityChangedAt: Map<string, string>,
+  dismissed: Map<string, { dismissedStateChangedAt: string }>,
+): number {
   let count = 0;
-  sessions.forEach((session) => {
-    if (session.activity === "pending_approval" || session.activity === "idle") {
+  sessions.forEach((session, sessionId) => {
+    if (session.activity !== "pending_approval" && session.activity !== "idle") return;
+    const stateChangedAt = activityChangedAt.get(sessionId) ?? "";
+    const record = dismissed.get(sessionId);
+    const isCurrentlyDismissed = record != null && stateChangedAt <= record.dismissedStateChangedAt;
+    if (!isCurrentlyDismissed) {
       count += 1;
     }
   });
@@ -25,7 +34,9 @@ export function Header({ connectionState }: HeaderProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const sessions = useSessionStore((state) => state.sessions);
-  const totalAttention = computeTotalAttention(sessions);
+  const activityChangedAt = useSessionStore((state) => state.activityChangedAt);
+  const dismissed = useNotificationDismissStore((state) => state.dismissed);
+  const totalAttention = computeVisibleAttentionCount(sessions, activityChangedAt, dismissed);
 
   // Close panel on outside click
   useEffect(() => {
