@@ -2,10 +2,10 @@ import type { ActivityStatus } from "@pi-fleet/shared";
 import { cn } from "@/lib/utils";
 
 const STATUS_COLORS: Record<ActivityStatus, string> = {
-  processing: "bg-blue-500",
-  running_tool: "bg-green-500",
-  idle: "bg-yellow-500",
-  pending_approval: "bg-red-500",
+  idle: "bg-activity-idle",
+  processing: "bg-activity-processing",
+  running_tool: "bg-activity-running-tool",
+  pending_approval: "bg-activity-pending-approval",
 };
 
 const STATUS_LABELS: Record<ActivityStatus, string> = {
