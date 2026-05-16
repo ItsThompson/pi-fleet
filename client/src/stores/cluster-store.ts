@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import type { ClusterDefinition } from "@pi-fleet/shared";
 import { getServerUrl } from "@/lib/bridge";
+import {
+  fetchClusters as apiFetchClusters,
+  createCluster as apiCreateCluster,
+  editCluster as apiEditCluster,
+  deleteCluster as apiDeleteCluster,
+  reorderClusters as apiReorderClusters,
+  assignSession as apiAssignSession,
+} from "@/api/cluster-api";
 
 interface ClusterWithPods extends ClusterDefinition {
   podIds: string[];
@@ -73,8 +81,7 @@ interface ClusterStore {
 }
 
 function resolveBaseUrl(override?: string): string {
-  if (override) return override;
-  return getServerUrl();
+  return override || getServerUrl();
 }
 
 export const useClusterStore = create<ClusterStore>((set, get) => ({
@@ -149,90 +156,47 @@ export const useClusterStore = create<ClusterStore>((set, get) => ({
   fetchClusters: async (baseUrl?) => {
     const url = resolveBaseUrl(baseUrl);
     set({ loading: true });
-    try {
-      const response = await fetch(`${url}/api/clusters`);
-      if (!response.ok) {
-        set({ loading: false });
-        return;
-      }
-      const data = await response.json();
+    const result = await apiFetchClusters(url);
+    if (result.ok) {
       set({
-        clusters: data.clusters ?? [],
-        unclustered: data.unclustered ?? { podIds: [], attentionCount: 0 },
+        clusters: result.data.clusters ?? [],
+        unclustered: result.data.unclustered ?? { podIds: [], attentionCount: 0 },
         loading: false,
       });
-    } catch {
+    } else {
       set({ loading: false });
     }
   },
 
   createCluster: async (name, directories, baseUrl?) => {
     const url = resolveBaseUrl(baseUrl);
-    try {
-      const response = await fetch(`${url}/api/clusters`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, directories }),
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as ClusterDefinition;
-    } catch {
-      return null;
-    }
+    const result = await apiCreateCluster(url, { name, directories });
+    if (!result.ok) return null;
+    return result.data;
   },
 
   editCluster: async (id, updates, baseUrl?) => {
     const url = resolveBaseUrl(baseUrl);
-    try {
-      const response = await fetch(`${url}/api/clusters/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as ClusterDefinition;
-    } catch {
-      return null;
-    }
+    const result = await apiEditCluster(url, id, updates);
+    if (!result.ok) return null;
+    return result.data;
   },
 
   deleteCluster: async (id, baseUrl?) => {
     const url = resolveBaseUrl(baseUrl);
-    try {
-      const response = await fetch(`${url}/api/clusters/${id}`, {
-        method: "DELETE",
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
+    const result = await apiDeleteCluster(url, id);
+    return result.ok;
   },
 
   reorder: async (orderedIds, baseUrl?) => {
     const url = resolveBaseUrl(baseUrl);
-    try {
-      const response = await fetch(`${url}/api/clusters/reorder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds }),
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
+    const result = await apiReorderClusters(url, orderedIds);
+    return result.ok;
   },
 
   assignSession: async (sessionId, clusterId, baseUrl?) => {
     const url = resolveBaseUrl(baseUrl);
-    try {
-      const response = await fetch(`${url}/api/clusters/assign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, clusterId }),
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
+    const result = await apiAssignSession(url, sessionId, clusterId);
+    return result.ok;
   },
 }));
