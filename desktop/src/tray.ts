@@ -40,9 +40,7 @@ export function createTrayManager(deps: TrayManagerDeps): TrayManager {
     tray.setToolTip("Pi Fleet");
     updateMenu();
 
-    tray.on("click", () => {
-      windowManager.toggleVisibility();
-    });
+
   }
 
   function updateMenu(): void {
