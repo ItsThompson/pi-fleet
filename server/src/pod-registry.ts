@@ -159,12 +159,13 @@ export class PodRegistry {
   /**
    * Called when a session registers. Re-evaluates pending ownership
    * to see if this new session is claimed by any parent.
+   * Falls back to CWD-based inference if no explicit ownership exists.
    */
   handleSessionRegistered(sessionId: string): void {
     const session = this.sessionRegistry.get(sessionId);
     if (!session?.subagentId) return;
 
-    // Check if any parent has claimed this subagentId
+    // Check if any parent has explicitly claimed this subagentId
     for (const [parentId, subagentIds] of this.ownershipMap) {
       if (subagentIds.includes(session.subagentId)) {
         const parentSession = this.sessionRegistry.get(parentId);
@@ -174,6 +175,31 @@ export class PodRegistry {
         return;
       }
     }
+
+    // No explicit ownership: infer parent from CWD.
+    // If exactly one non-subagent session shares the same cwd, treat it as parent.
+    const candidates = this.sessionRegistry.getAll().filter(
+      (other) =>
+        other.sessionId !== sessionId &&
+        other.cwd === session.cwd &&
+        !other.subagentId,
+    );
+
+    if (candidates.length !== 1) return;
+
+    const inferredParent = candidates[0];
+    const existingIds = this.ownershipMap.get(inferredParent.sessionId) ?? [];
+    if (!existingIds.includes(session.subagentId)) {
+      this.ownershipMap.set(
+        inferredParent.sessionId,
+        [...existingIds, session.subagentId],
+      );
+    }
+
+    this.emit({
+      type: existingIds.length === 0 ? "pod:formed" : "pod:updated",
+      pod: this.buildPod(inferredParent.sessionId),
+    });
   }
 
   /**
@@ -246,6 +272,37 @@ export class PodRegistry {
       });
 
       pods.push(this.buildPodFromMembers(parentSession, memberSessions));
+    });
+
+    // Infer pods for unclaimed subagent sessions via CWD matching.
+    // Groups a child with its parent when exactly one non-subagent session
+    // shares the same cwd (avoids ambiguity with multiple candidates).
+    const inferredGroups = new Map<string, RegisteredSession[]>();
+    allSessions.forEach((session) => {
+      if (claimedSessionIds.has(session.sessionId)) return;
+      if (!session.subagentId) return;
+
+      const candidates = allSessions.filter(
+        (other) =>
+          other.sessionId !== session.sessionId &&
+          other.cwd === session.cwd &&
+          !other.subagentId &&
+          !claimedSessionIds.has(other.sessionId),
+      );
+      if (candidates.length !== 1) return;
+
+      const parent = candidates[0];
+      claimedSessionIds.add(session.sessionId);
+      claimedSessionIds.add(parent.sessionId);
+
+      const group = inferredGroups.get(parent.sessionId) ?? [parent];
+      group.push(session);
+      inferredGroups.set(parent.sessionId, group);
+    });
+
+    inferredGroups.forEach((members, parentId) => {
+      const parent = members[0];
+      pods.push(this.buildPodFromMembers(parent, members));
     });
 
     // Build single-member pods for unclaimed sessions

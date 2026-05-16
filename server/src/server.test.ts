@@ -192,8 +192,9 @@ describe("Server Routes", () => {
         },
       });
 
-      expect(broadcastedEvents).toHaveLength(1);
-      expect(broadcastedEvents[0].type).toBe("session:updated");
+      const sessionEvent = broadcastedEvents.find((e) => e.type === "session:updated");
+      expect(sessionEvent).toBeDefined();
+      expect(sessionEvent!.type).toBe("session:updated");
     });
   });
 

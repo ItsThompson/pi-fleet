@@ -382,4 +382,89 @@ describe("PodRegistry", () => {
       expect(extraEvents).toHaveLength(0);
     });
   });
+
+  describe("CWD-based pod inference", () => {
+    it("infers parent when exactly one non-subagent session shares cwd", () => {
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "parent", cwd: "/project-a" }),
+      );
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "child", cwd: "/project-a", subagentId: "sub-1" }),
+      );
+      events = [];
+      podRegistry.handleSessionRegistered("child");
+
+      const pods = podRegistry.getPods();
+      expect(pods).toHaveLength(1);
+      expect(pods[0].leadSessionId).toBe("parent");
+      expect(pods[0].memberSessionIds).toContain("child");
+    });
+
+    it("does not infer when multiple non-subagent sessions share cwd", () => {
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "s1", cwd: "/project-a" }),
+      );
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "s2", cwd: "/project-a" }),
+      );
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "child", cwd: "/project-a", subagentId: "sub-1" }),
+      );
+      podRegistry.handleSessionRegistered("child");
+
+      const pods = podRegistry.getPods();
+      expect(pods).toHaveLength(3);
+      pods.forEach((pod) => {
+        expect(pod.memberSessionIds).toHaveLength(1);
+      });
+    });
+
+    it("does not infer across different cwds", () => {
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "parent", cwd: "/project-a" }),
+      );
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "child", cwd: "/project-b", subagentId: "sub-1" }),
+      );
+      podRegistry.handleSessionRegistered("child");
+
+      const pods = podRegistry.getPods();
+      expect(pods).toHaveLength(2);
+      pods.forEach((pod) => {
+        expect(pod.memberSessionIds).toHaveLength(1);
+      });
+    });
+
+    it("emits pod:formed on inferred grouping", () => {
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "parent", cwd: "/project-a" }),
+      );
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "child", cwd: "/project-a", subagentId: "sub-1" }),
+      );
+      events = [];
+      podRegistry.handleSessionRegistered("child");
+
+      const formed = events.filter((e) => e.type === "pod:formed");
+      expect(formed).toHaveLength(1);
+      expect((formed[0] as { pod: { leadSessionId: string } }).pod.leadSessionId).toBe("parent");
+    });
+
+    it("explicit ownership takes precedence over inference", () => {
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "parent", cwd: "/project-a" }),
+      );
+      sessionRegistry.register(
+        buildRegisterBody({ sessionId: "child", cwd: "/project-a", subagentId: "sub-1" }),
+      );
+
+      // Explicit ownership report overrides
+      podRegistry.reportOwnership("parent", ["sub-1"]);
+
+      const pods = podRegistry.getPods();
+      expect(pods).toHaveLength(1);
+      expect(pods[0].leadSessionId).toBe("parent");
+      expect(pods[0].memberSessionIds).toContain("child");
+    });
+  });
 });
