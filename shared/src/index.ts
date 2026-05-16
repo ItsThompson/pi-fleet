@@ -21,7 +21,7 @@ export type { ClusterDefinition, ClusterConfig } from "./types/cluster.js";
 export type { PiFleetConfig } from "./types/config.js";
 
 // Types: events
-export type { SSEEvent, SSEEventType } from "./types/events.js";
+export type { SSEEvent } from "./types/events.js";
 
 // Types: terminal
 export type {
@@ -46,6 +46,5 @@ export {
 export {
   getConfigDir,
   getConfigPath,
-  getLogDir,
   getLogPath,
 } from "./paths.js";
