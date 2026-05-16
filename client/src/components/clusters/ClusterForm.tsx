@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Plus } from "lucide-react";
-import { getServerUrl } from "@/lib/bridge";
+import { X, Plus, FolderOpen } from "lucide-react";
+import { getBridge, getServerUrl, selectDirectory } from "@/lib/bridge";
 import { createCluster, editCluster } from "@/api/cluster-api";
 import type { ClusterDefinition } from "@pi-fleet/shared";
 
@@ -21,6 +21,7 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
 	const [error, setError] = useState<string | null>(null);
 
 	const isEditing = cluster !== null && cluster !== undefined;
+	const hasBridge = getBridge() !== null;
 
 	function addDirectory(): void {
 		setDirectories([...directories, ""]);
@@ -34,6 +35,13 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
 		const updated = [...directories];
 		updated[index] = value;
 		setDirectories(updated);
+	}
+
+	async function handleBrowse(index: number): Promise<void> {
+		const selected = await selectDirectory();
+		if (selected) {
+			updateDirectory(index, selected);
+		}
 	}
 
 	async function handleSubmit(event: React.FormEvent): Promise<void> {
@@ -148,6 +156,16 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
 										placeholder="~/workplace/project/"
 										className="flex-1 px-3 py-1.5 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
 									/>
+									{hasBridge && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="xs"
+											onClick={() => handleBrowse(index)}
+										>
+											<FolderOpen className="h-3 w-3" />
+										</Button>
+									)}
 									<Button
 										type="button"
 										variant="ghost"
