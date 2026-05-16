@@ -69,16 +69,29 @@ describe("useSSE", () => {
 			if (url.includes("/api/sessions")) {
 				return Promise.resolve({
 					ok: true,
+					status: 200,
 					json: () => Promise.resolve({ sessions: [] }),
 				});
 			}
 			if (url.includes("/api/pods")) {
 				return Promise.resolve({
 					ok: true,
+					status: 200,
 					json: () => Promise.resolve({ pods: [] }),
 				});
 			}
-			return Promise.resolve({ ok: false });
+			if (url.includes("/api/clusters")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () =>
+						Promise.resolve({
+							clusters: [],
+							unclustered: { podIds: [], attentionCount: 0 },
+						}),
+				});
+			}
+			return Promise.resolve({ ok: false, status: 404 });
 		});
 	});
 
@@ -302,16 +315,29 @@ describe("useSSE", () => {
 			if (url.includes("/api/sessions")) {
 				return Promise.resolve({
 					ok: true,
+					status: 200,
 					json: () => Promise.resolve({ sessions: [sessionData] }),
 				});
 			}
 			if (url.includes("/api/pods")) {
 				return Promise.resolve({
 					ok: true,
+					status: 200,
 					json: () => Promise.resolve({ pods: [] }),
 				});
 			}
-			return Promise.resolve({ ok: false });
+			if (url.includes("/api/clusters")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () =>
+						Promise.resolve({
+							clusters: [],
+							unclustered: { podIds: [], attentionCount: 0 },
+						}),
+				});
+			}
+			return Promise.resolve({ ok: false, status: 404 });
 		});
 
 		renderHook(() => useSSE());

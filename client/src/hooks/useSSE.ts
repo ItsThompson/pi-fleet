@@ -4,8 +4,8 @@ import {
 	type ConnectionState,
 } from "@/lib/sse-connection";
 import { createSSEDispatcher } from "@/lib/sse-dispatcher";
+import { createSSERefetch } from "@/lib/sse-refetch";
 import { getServerUrl } from "@/lib/bridge";
-import { refetchAllState, refetchClusters } from "@/lib/sse-refetch";
 
 export type SSEConnectionState = ConnectionState;
 
@@ -37,15 +37,29 @@ export function useSSE(): SSEConnectionState {
 
 	useEffect(() => {
 		const baseUrl = getServerUrl();
+
 		const dispatcher = createSSEDispatcher({
-			onConnected: () => refetchAllState(baseUrl),
-			onAssignmentChanged: () => refetchClusters(baseUrl),
+			onConnected: () => refetch.refetchAll(),
+			onAssignmentChanged: () => refetch.refetchClusters(),
+		});
+
+		const refetch = createSSERefetch({
+			baseUrl,
+			debounceMs: 100,
+			gatingTimeoutMs: 5000,
+			dispatch: dispatcher.dispatch,
 		});
 
 		const connection = createSSEConnection({
 			url: `${baseUrl}/api/events`,
 			eventTypes: EVENT_TYPES,
-			onEvent: dispatcher.dispatch,
+			onEvent: (type, data) => {
+				if (refetch.isGating()) {
+					refetch.queueEvent(type, data);
+				} else {
+					dispatcher.dispatch(type, data);
+				}
+			},
 			onStateChange: setState,
 		});
 
@@ -54,6 +68,7 @@ export function useSSE(): SSEConnectionState {
 
 		return () => {
 			connection.close();
+			refetch.dispose();
 			connectionRef.current = null;
 		};
 	}, []);
