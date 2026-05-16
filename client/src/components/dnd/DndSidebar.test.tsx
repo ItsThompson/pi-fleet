@@ -22,7 +22,7 @@ describe("Sidebar DnD Integration", () => {
 		usePodStore.setState({ pods: new Map() });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 		useNavigationStore.setState({
@@ -45,11 +45,9 @@ describe("Sidebar DnD Integration", () => {
 					name: "Work",
 					directories: [],
 					sortOrder: 0,
-					podIds: ["lead-1"],
-					attentionCount: 0,
 				},
 			],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 
@@ -73,19 +71,15 @@ describe("Sidebar DnD Integration", () => {
 					name: "Work",
 					directories: [],
 					sortOrder: 0,
-					podIds: [],
-					attentionCount: 0,
 				},
 				{
 					id: "c2",
 					name: "Personal",
 					directories: [],
 					sortOrder: 1,
-					podIds: [],
-					attentionCount: 0,
 				},
 			],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 
@@ -111,11 +105,9 @@ describe("Sidebar DnD Integration", () => {
 					name: "Work",
 					directories: [],
 					sortOrder: 0,
-					podIds: [],
-					attentionCount: 0,
 				},
 			],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 
@@ -141,7 +133,7 @@ describe("Sidebar DnD Integration", () => {
 		usePodStore.setState({ pods });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: ["lead-1"], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 
@@ -174,11 +166,9 @@ describe("Sidebar DnD Integration", () => {
 					name: "Work",
 					directories: [],
 					sortOrder: 0,
-					podIds: ["lead-1"],
-					attentionCount: 0,
 				},
 			],
-			unclustered: { podIds: ["lead-2"], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 
@@ -201,7 +191,7 @@ describe("Sidebar DnD Integration", () => {
 		usePodStore.setState({ pods });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: ["lead-1"], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 

@@ -30,6 +30,7 @@ function buildPod(overrides?: Partial<Pod>): Pod {
 		displayName: "my-project",
 		state: "processing",
 		attentionCount: 0,
+
 		...overrides,
 	};
 }
@@ -50,19 +51,15 @@ function renderDndScenario() {
 				name: "Work",
 				directories: [],
 				sortOrder: 0,
-				podIds: ["lead-1"],
-				attentionCount: 0,
 			},
 			{
 				id: "c2",
 				name: "Personal",
 				directories: [],
 				sortOrder: 1,
-				podIds: ["lead-2"],
-				attentionCount: 0,
 			},
 		],
-		unclustered: { podIds: [], attentionCount: 0 },
+		manualAssignments: {},
 		loading: false,
 	});
 
@@ -112,7 +109,7 @@ describe("DnD API Integration (real component)", () => {
 		usePodStore.setState({ pods: new Map() });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 	});
@@ -179,19 +176,15 @@ describe("DnD API Integration (real component)", () => {
 						name: "Work",
 						directories: [],
 						sortOrder: 0,
-						podIds: ["lead-1"],
-						attentionCount: 0,
 					},
 					{
 						id: "c2",
 						name: "Personal",
 						directories: [],
 						sortOrder: 1,
-						podIds: [],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 			const pods = new Map([
@@ -235,11 +228,9 @@ describe("DnD API Integration (real component)", () => {
 						name: "Work",
 						directories: [],
 						sortOrder: 0,
-						podIds: ["lead-1"],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 			const pods = new Map([
@@ -280,19 +271,15 @@ describe("DnD API Integration (real component)", () => {
 						name: "First",
 						directories: [],
 						sortOrder: 0,
-						podIds: [],
-						attentionCount: 0,
 					},
 					{
 						id: "c2",
 						name: "Second",
 						directories: [],
 						sortOrder: 1,
-						podIds: [],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 

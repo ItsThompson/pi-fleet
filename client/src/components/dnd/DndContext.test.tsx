@@ -26,7 +26,7 @@ describe("DnD Components", () => {
 		usePodStore.setState({ pods: new Map() });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 	});
@@ -175,11 +175,9 @@ describe("DnD Components", () => {
 						name: "Work",
 						directories: [],
 						sortOrder: 0,
-						podIds: ["lead-1"],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: ["lead-2"], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 
@@ -218,19 +216,15 @@ describe("DnD Components", () => {
 						name: "Work",
 						directories: [],
 						sortOrder: 0,
-						podIds: ["lead-1"],
-						attentionCount: 0,
 					},
 					{
 						id: "c2",
 						name: "Personal",
 						directories: [],
 						sortOrder: 1,
-						podIds: [],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 
@@ -272,19 +266,15 @@ describe("DnD Components", () => {
 						name: "First",
 						directories: [],
 						sortOrder: 0,
-						podIds: [],
-						attentionCount: 0,
 					},
 					{
 						id: "c2",
 						name: "Second",
 						directories: [],
 						sortOrder: 1,
-						podIds: [],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 
