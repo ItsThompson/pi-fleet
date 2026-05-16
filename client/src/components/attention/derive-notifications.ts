@@ -4,35 +4,29 @@ import type {
 	ClusterDefinition,
 } from "@pi-fleet/shared";
 import { isAttentionState, getStateChangedAt } from "@/lib/attention-utils";
+import { getClusterForPod } from "@/lib/derived-clusters";
 import type { NotificationEntry } from "./types";
-
-interface ClusterWithPods extends ClusterDefinition {
-	podIds: string[];
-}
 
 /**
  * Derives notification entries from current session, pod, and cluster state.
  * Returns sessions needing attention (pending_approval or idle),
  * sorted by activityChangedAt descending (most recent first).
+ *
+ * Uses the shared assignment algorithm (via getClusterForPod) for cluster
+ * name attribution: no cached podIds lookup needed.
  */
 export function deriveNotificationEntries(
 	sessions: Map<string, RegisteredSession>,
 	pods: Map<string, Pod>,
 	activityChangedAt: Map<string, string>,
-	clusters: ClusterWithPods[],
+	clusters: ClusterDefinition[],
+	manualAssignments: Record<string, string>,
+	homedir: string,
 ): NotificationEntry[] {
 	const podBySessionId = new Map<string, Pod>();
 	pods.forEach((pod) => {
 		pod.memberSessionIds.forEach((id) => {
 			podBySessionId.set(id, pod);
-		});
-	});
-
-	// Build pod leadSessionId → cluster name lookup
-	const clusterNameByPodId = new Map<string, string>();
-	clusters.forEach((cluster) => {
-		cluster.podIds.forEach((podId) => {
-			clusterNameByPodId.set(podId, cluster.name);
 		});
 	});
 
@@ -49,8 +43,17 @@ export function deriveNotificationEntries(
 			activityChangedAt,
 			session,
 		);
-		const clusterName = pod
-			? (clusterNameByPodId.get(pod.leadSessionId) ?? null)
+
+		// Use the shared assignment algorithm for cluster attribution
+		const cluster = pod
+			? getClusterForPod(
+					pod.leadSessionId,
+					pods,
+					sessions,
+					clusters,
+					manualAssignments,
+					homedir,
+				)
 			: null;
 
 		entries.push({
@@ -58,7 +61,7 @@ export function deriveNotificationEntries(
 			sessionName:
 				session.agentName ?? session.cwd.split("/").pop() ?? session.sessionId,
 			podDisplayName: pod?.displayName ?? "Unknown",
-			clusterName,
+			clusterName: cluster?.name ?? null,
 			state: session.activity,
 			stateChangedAt: changedAt,
 		});

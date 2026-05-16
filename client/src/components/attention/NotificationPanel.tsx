@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { inferHomedir } from "@pi-fleet/shared";
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
@@ -14,6 +16,17 @@ export function NotificationPanel() {
 	const activityChangedAt = useSessionStore((state) => state.activityChangedAt);
 	const pods = usePodStore((state) => state.pods);
 	const clusters = useClusterStore((state) => state.clusters);
+	const manualAssignments = useClusterStore((state) => state.manualAssignments);
+
+	const homedir = useMemo(() => {
+		for (const session of sessions.values()) {
+			const resolved = inferHomedir(session.cwd);
+			if (resolved) {
+				return resolved;
+			}
+		}
+		return "";
+	}, [sessions]);
 
 	const dismissed = useNotificationDismissStore((state) => state.dismissed);
 	const dismiss = useNotificationDismissStore((state) => state.dismiss);
@@ -24,6 +37,8 @@ export function NotificationPanel() {
 		pods,
 		activityChangedAt,
 		clusters,
+		manualAssignments,
+		homedir,
 	);
 	const entries = filterDismissedNotifications(allEntries, dismissed);
 

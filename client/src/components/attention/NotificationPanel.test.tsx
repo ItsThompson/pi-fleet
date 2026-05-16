@@ -43,7 +43,7 @@ describe("NotificationPanel", () => {
 		usePodStore.setState({ pods: new Map() });
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 		});
 		useNotificationDismissStore.setState({ dismissed: new Map() });
 	});
@@ -204,6 +204,13 @@ describe("NotificationPanel", () => {
 	it("displays cluster name for sessions in a cluster", () => {
 		const sessions = new Map([
 			[
+				"pod-lead",
+				buildSession({
+					sessionId: "pod-lead",
+					activity: "processing",
+				}),
+			],
+			[
 				"session-1",
 				buildSession({
 					sessionId: "session-1",
@@ -217,7 +224,7 @@ describe("NotificationPanel", () => {
 				"pod-lead",
 				buildPod({
 					leadSessionId: "pod-lead",
-					memberSessionIds: ["session-1"],
+					memberSessionIds: ["pod-lead", "session-1"],
 					displayName: "My Pod",
 				}),
 			],
@@ -233,11 +240,9 @@ describe("NotificationPanel", () => {
 					name: "Work",
 					directories: [],
 					sortOrder: 0,
-					podIds: ["pod-lead"],
-					attentionCount: 1,
 				},
 			],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: { "pod-lead": "c1" },
 		});
 
 		render(<NotificationPanel />);

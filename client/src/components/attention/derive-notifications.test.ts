@@ -12,7 +12,7 @@ function buildSession(
 	return {
 		sessionId: "session-1",
 		pid: 1234,
-		cwd: "/home/user/project",
+		cwd: "/Users/alice/projects/app",
 		tmuxTarget: "main:1.0",
 		startTime: "2025-01-01T00:00:00Z",
 		activity: "processing",
@@ -33,20 +33,19 @@ function buildPod(overrides?: Partial<Pod>): Pod {
 	};
 }
 
-interface ClusterWithPods extends ClusterDefinition {
-	podIds: string[];
-}
-
-function buildCluster(overrides?: Partial<ClusterWithPods>): ClusterWithPods {
+function buildCluster(
+	overrides?: Partial<ClusterDefinition>,
+): ClusterDefinition {
 	return {
 		id: "cluster-1",
 		name: "Work",
-		directories: [],
+		directories: ["~/projects"],
 		sortOrder: 0,
-		podIds: [],
 		...overrides,
 	};
 }
+
+const homedir = "/Users/alice";
 
 describe("deriveNotificationEntries", () => {
 	it("returns empty array when no sessions need attention", () => {
@@ -61,6 +60,8 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			[],
+			{},
+			homedir,
 		);
 		expect(result).toEqual([]);
 	});
@@ -113,6 +114,8 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			[],
+			{},
+			homedir,
 		);
 		expect(result).toHaveLength(2);
 		expect(result[0].sessionId).toBe("s2"); // More recent
@@ -137,6 +140,8 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			[],
+			{},
+			homedir,
 		);
 		expect(result[0].sessionId).toBe("s2");
 		expect(result[1].sessionId).toBe("s3");
@@ -171,6 +176,8 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			[],
+			{},
+			homedir,
 		);
 		expect(result[0].podDisplayName).toBe("My Pod");
 	});
@@ -191,7 +198,7 @@ describe("deriveNotificationEntries", () => {
 					sessionId: "s2",
 					activity: "idle",
 					agentName: undefined,
-					cwd: "/home/user/my-project",
+					cwd: "/Users/alice/my-project",
 				}),
 			],
 		]);
@@ -206,6 +213,8 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			[],
+			{},
+			homedir,
 		);
 		expect(result[0].sessionName).toBe("named-agent");
 		expect(result[1].sessionName).toBe("my-project");
@@ -230,26 +239,30 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			[],
+			{},
+			homedir,
 		);
 		expect(result[0].stateChangedAt).toBe("2025-01-01T00:10:00Z");
 	});
 
-	it("resolves cluster name from pod membership", () => {
+	it("resolves cluster name from assignment algorithm", () => {
 		const sessions = new Map([
 			[
-				"s1",
+				"pod-lead-1",
 				buildSession({
-					sessionId: "s1",
+					sessionId: "pod-lead-1",
 					activity: "idle",
 					agentName: "agent-in-cluster",
+					cwd: "/Users/alice/projects/app",
 				}),
 			],
 			[
-				"s2",
+				"pod-lead-2",
 				buildSession({
-					sessionId: "s2",
+					sessionId: "pod-lead-2",
 					activity: "pending_approval",
 					agentName: "agent-unclustered",
+					cwd: "/tmp/random",
 				}),
 			],
 		]);
@@ -258,7 +271,7 @@ describe("deriveNotificationEntries", () => {
 				"pod-lead-1",
 				buildPod({
 					leadSessionId: "pod-lead-1",
-					memberSessionIds: ["s1"],
+					memberSessionIds: ["pod-lead-1"],
 					displayName: "Clustered Pod",
 				}),
 			],
@@ -266,17 +279,17 @@ describe("deriveNotificationEntries", () => {
 				"pod-lead-2",
 				buildPod({
 					leadSessionId: "pod-lead-2",
-					memberSessionIds: ["s2"],
+					memberSessionIds: ["pod-lead-2"],
 					displayName: "Unclustered Pod",
 				}),
 			],
 		]);
 		const activityChangedAt = new Map([
-			["s1", "2025-01-01T00:02:00Z"],
-			["s2", "2025-01-01T00:01:00Z"],
+			["pod-lead-1", "2025-01-01T00:02:00Z"],
+			["pod-lead-2", "2025-01-01T00:01:00Z"],
 		]);
 		const clusters = [
-			buildCluster({ id: "c1", name: "Work", podIds: ["pod-lead-1"] }),
+			buildCluster({ id: "c1", name: "Work", directories: ["~/projects"] }),
 		];
 
 		const result = deriveNotificationEntries(
@@ -284,11 +297,13 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			clusters,
+			{},
+			homedir,
 		);
 
-		expect(result[0].sessionId).toBe("s1");
+		expect(result[0].sessionId).toBe("pod-lead-1");
 		expect(result[0].clusterName).toBe("Work");
-		expect(result[1].sessionId).toBe("s2");
+		expect(result[1].sessionId).toBe("pod-lead-2");
 		expect(result[1].clusterName).toBeNull();
 	});
 
@@ -299,7 +314,7 @@ describe("deriveNotificationEntries", () => {
 		const pods = new Map<string, Pod>(); // no pods
 		const activityChangedAt = new Map([["s1", "2025-01-01T00:01:00Z"]]);
 		const clusters = [
-			buildCluster({ id: "c1", name: "Work", podIds: ["some-other-pod"] }),
+			buildCluster({ id: "c1", name: "Work", directories: ["~/projects"] }),
 		];
 
 		const result = deriveNotificationEntries(
@@ -307,6 +322,8 @@ describe("deriveNotificationEntries", () => {
 			pods,
 			activityChangedAt,
 			clusters,
+			{},
+			homedir,
 		);
 		expect(result[0].clusterName).toBeNull();
 	});
