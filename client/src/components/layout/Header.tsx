@@ -5,34 +5,12 @@ import { useNotificationDismissStore } from "@/stores/notification-dismiss-store
 import { useNavigationStore } from "@/stores/navigation-store";
 import { NotificationPanel } from "@/components/attention/NotificationPanel";
 import { AttentionBadge } from "@/components/attention/AttentionBadge";
+import { computeVisibleAttentionCount } from "@/lib/attention-utils";
 import { Bell, Wifi, WifiOff, AlertTriangle } from "lucide-react";
 import { useState, useRef, useEffect, type CSSProperties } from "react";
 
 interface HeaderProps {
 	connectionState: SSEConnectionState;
-}
-
-export function computeVisibleAttentionCount(
-	sessions: Map<string, { activity: string }>,
-	activityChangedAt: Map<string, string>,
-	dismissed: Map<string, { dismissedStateChangedAt: string }>,
-): number {
-	return Array.from(sessions.entries()).reduce(
-		(count, [sessionId, session]) => {
-			if (
-				session.activity !== "pending_approval" &&
-				session.activity !== "idle"
-			) {
-				return count;
-			}
-			const stateChangedAt = activityChangedAt.get(sessionId) ?? "";
-			const record = dismissed.get(sessionId);
-			const isCurrentlyDismissed =
-				record != null && stateChangedAt <= record.dismissedStateChangedAt;
-			return isCurrentlyDismissed ? count : count + 1;
-		},
-		0,
-	);
 }
 
 export function Header({ connectionState }: HeaderProps) {

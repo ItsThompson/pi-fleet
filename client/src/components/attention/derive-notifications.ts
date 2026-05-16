@@ -3,6 +3,7 @@ import type {
 	Pod,
 	ClusterDefinition,
 } from "@pi-fleet/shared";
+import { isAttentionState, getStateChangedAt } from "@/lib/attention-utils";
 import type { NotificationEntry } from "./types";
 
 interface ClusterWithPods extends ClusterDefinition {
@@ -38,16 +39,16 @@ export function deriveNotificationEntries(
 	const entries: NotificationEntry[] = [];
 
 	sessions.forEach((session) => {
-		if (
-			session.activity !== "pending_approval" &&
-			session.activity !== "idle"
-		) {
+		if (!isAttentionState(session.activity)) {
 			return;
 		}
 
 		const pod = podBySessionId.get(session.sessionId);
-		const changedAt =
-			activityChangedAt.get(session.sessionId) ?? session.lastSeen;
+		const changedAt = getStateChangedAt(
+			session.sessionId,
+			activityChangedAt,
+			session,
+		);
 		const clusterName = pod
 			? (clusterNameByPodId.get(pod.leadSessionId) ?? null)
 			: null;

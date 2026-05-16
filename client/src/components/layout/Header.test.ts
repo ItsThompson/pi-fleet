@@ -1,12 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { computeVisibleAttentionCount } from "./Header";
+import { computeVisibleAttentionCount } from "@/lib/attention-utils";
+import type { RegisteredSession } from "@pi-fleet/shared";
+
+function buildSession(
+	overrides?: Partial<RegisteredSession>,
+): RegisteredSession {
+	return {
+		sessionId: "session-1",
+		pid: 1234,
+		cwd: "/home/user/project",
+		tmuxTarget: "main:1.0",
+		startTime: "2025-01-01T00:00:00Z",
+		activity: "processing",
+		lastSeen: "2025-01-01T00:05:00Z",
+		lastEventTime: "2025-01-01T00:05:00Z",
+		...overrides,
+	};
+}
 
 describe("computeVisibleAttentionCount", () => {
 	it("counts sessions needing attention (pending_approval and idle)", () => {
-		const sessions = new Map<string, { activity: string }>([
-			["s1", { activity: "idle" }],
-			["s2", { activity: "pending_approval" }],
-			["s3", { activity: "processing" }],
+		const sessions = new Map([
+			["s1", buildSession({ sessionId: "s1", activity: "idle" })],
+			["s2", buildSession({ sessionId: "s2", activity: "pending_approval" })],
+			["s3", buildSession({ sessionId: "s3", activity: "processing" })],
 		]);
 		const activityChangedAt = new Map([
 			["s1", "2025-01-01T00:01:00Z"],
@@ -21,10 +38,10 @@ describe("computeVisibleAttentionCount", () => {
 	});
 
 	it("excludes dismissed sessions from count", () => {
-		const sessions = new Map<string, { activity: string }>([
-			["s1", { activity: "idle" }],
-			["s2", { activity: "pending_approval" }],
-			["s3", { activity: "idle" }],
+		const sessions = new Map([
+			["s1", buildSession({ sessionId: "s1", activity: "idle" })],
+			["s2", buildSession({ sessionId: "s2", activity: "pending_approval" })],
+			["s3", buildSession({ sessionId: "s3", activity: "idle" })],
 		]);
 		const activityChangedAt = new Map([
 			["s1", "2025-01-01T00:01:00Z"],
@@ -41,8 +58,8 @@ describe("computeVisibleAttentionCount", () => {
 	});
 
 	it("includes cycled sessions (newer stateChangedAt than dismissal)", () => {
-		const sessions = new Map<string, { activity: string }>([
-			["s1", { activity: "idle" }],
+		const sessions = new Map([
+			["s1", buildSession({ sessionId: "s1", activity: "idle" })],
 		]);
 		const activityChangedAt = new Map([["s1", "2025-01-01T00:10:00Z"]]);
 		const dismissed = new Map([
@@ -55,9 +72,9 @@ describe("computeVisibleAttentionCount", () => {
 	});
 
 	it("returns 0 when all attention sessions are dismissed", () => {
-		const sessions = new Map<string, { activity: string }>([
-			["s1", { activity: "idle" }],
-			["s2", { activity: "pending_approval" }],
+		const sessions = new Map([
+			["s1", buildSession({ sessionId: "s1", activity: "idle" })],
+			["s2", buildSession({ sessionId: "s2", activity: "pending_approval" })],
 		]);
 		const activityChangedAt = new Map([
 			["s1", "2025-01-01T00:01:00Z"],
@@ -74,9 +91,9 @@ describe("computeVisibleAttentionCount", () => {
 	});
 
 	it("returns 0 when no sessions need attention", () => {
-		const sessions = new Map<string, { activity: string }>([
-			["s1", { activity: "processing" }],
-			["s2", { activity: "running_tool" }],
+		const sessions = new Map([
+			["s1", buildSession({ sessionId: "s1", activity: "processing" })],
+			["s2", buildSession({ sessionId: "s2", activity: "running_tool" })],
 		]);
 		const activityChangedAt = new Map([
 			["s1", "2025-01-01T00:01:00Z"],
@@ -89,13 +106,22 @@ describe("computeVisibleAttentionCount", () => {
 		).toBe(0);
 	});
 
-	it("uses empty string fallback when activityChangedAt is missing", () => {
-		const sessions = new Map<string, { activity: string }>([
-			["s1", { activity: "idle" }],
+	it("uses lastSeen fallback when activityChangedAt is missing", () => {
+		const sessions = new Map([
+			[
+				"s1",
+				buildSession({
+					sessionId: "s1",
+					activity: "idle",
+					lastSeen: "2025-01-01T00:05:00Z",
+				}),
+			],
 		]);
 		const activityChangedAt = new Map<string, string>();
-		// Dismissed with empty string means "" <= "" is true, so it stays dismissed
-		const dismissed = new Map([["s1", { dismissedStateChangedAt: "" }]]);
+		// lastSeen (00:05) <= dismissed (00:05) → dismissed
+		const dismissed = new Map([
+			["s1", { dismissedStateChangedAt: "2025-01-01T00:05:00Z" }],
+		]);
 
 		expect(
 			computeVisibleAttentionCount(sessions, activityChangedAt, dismissed),
