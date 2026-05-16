@@ -290,7 +290,9 @@ describe("piFleetExtension (index.ts wiring)", () => {
   });
 
   it("re-reports pod ownership after server restart re-registration", async () => {
+    const emitSpy = vi.fn();
     const { pi, handlers } = buildMockPi();
+    (pi.events as { emit: typeof emitSpy }).emit = emitSpy;
     piFleetExtension(pi);
 
     // Start session (triggers register + requestInitialState)
@@ -300,10 +302,8 @@ describe("piFleetExtension (index.ts wiring)", () => {
     ) => Promise<void>;
     await startHandler({ type: "session_start", reason: "startup" }, buildMockCtx());
 
-    const emitMock = pi.events.emit as ReturnType<typeof vi.fn>;
-
     // Verify initial requestInitialState emitted
-    const initialRequests = emitMock.mock.calls.filter(
+    const initialRequests = emitSpy.mock.calls.filter(
       (call: unknown[]) => call[0] === "pi-fleet:request-subagent-registry",
     );
     expect(initialRequests).toHaveLength(1);
@@ -316,7 +316,7 @@ describe("piFleetExtension (index.ts wiring)", () => {
     await vi.advanceTimersByTimeAsync(5000);
 
     // After re-registration, should re-request subagent registry
-    const allRequests = emitMock.mock.calls.filter(
+    const allRequests = emitSpy.mock.calls.filter(
       (call: unknown[]) => call[0] === "pi-fleet:request-subagent-registry",
     );
     expect(allRequests.length).toBeGreaterThan(1);

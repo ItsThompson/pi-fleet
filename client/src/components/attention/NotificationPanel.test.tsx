@@ -4,6 +4,7 @@ import { NotificationPanel } from "./NotificationPanel";
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
+import { useNotificationDismissStore } from "@/stores/notification-dismiss-store";
 import type { RegisteredSession, Pod } from "@pi-fleet/shared";
 
 function buildSession(overrides?: Partial<RegisteredSession>): RegisteredSession {
@@ -39,6 +40,7 @@ describe("NotificationPanel", () => {
     });
     usePodStore.setState({ pods: new Map() });
     useClusterStore.setState({ clusters: [], unclustered: { podIds: [], attentionCount: 0 } });
+    useNotificationDismissStore.setState({ dismissed: new Map() });
   });
 
   it("renders empty state when no sessions need attention", () => {
@@ -47,7 +49,7 @@ describe("NotificationPanel", () => {
     ]);
     useSessionStore.setState({ sessions, activityChangedAt: new Map([["session-1", "2025-01-01T00:00:00Z"]]) });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     expect(screen.getByText("No sessions need attention")).toBeInTheDocument();
     expect(screen.getByText("Notifications (0)")).toBeInTheDocument();
@@ -72,7 +74,7 @@ describe("NotificationPanel", () => {
     useSessionStore.setState({ sessions, activityChangedAt });
     usePodStore.setState({ pods });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     expect(screen.getByText("Notifications (2)")).toBeInTheDocument();
     expect(screen.getByText("refactor-agent")).toBeInTheDocument();
@@ -93,7 +95,7 @@ describe("NotificationPanel", () => {
 
     useSessionStore.setState({ sessions, activityChangedAt });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     const entries = screen.getAllByText(/session/);
     // "newer-session" should appear before "older-session"
@@ -120,7 +122,7 @@ describe("NotificationPanel", () => {
 
     useSessionStore.setState({ sessions, activityChangedAt });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     const openButton = screen.getByRole("button", { name: /open/i });
     fireEvent.click(openButton);
@@ -129,16 +131,6 @@ describe("NotificationPanel", () => {
 
     // Cleanup
     delete window.piFleet;
-  });
-
-  it("calls onClose when close button clicked", () => {
-    const onClose = vi.fn();
-    render(<NotificationPanel onClose={onClose} />);
-
-    const closeButton = screen.getByRole("button", { name: /close notifications/i });
-    fireEvent.click(closeButton);
-
-    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("displays cluster name for sessions in a cluster", () => {
@@ -164,8 +156,134 @@ describe("NotificationPanel", () => {
       unclustered: { podIds: [], attentionCount: 0 },
     });
 
-    render(<NotificationPanel onClose={() => {}} />);
+    render(<NotificationPanel />);
 
     expect(screen.getByText(/Cluster: Work/)).toBeInTheDocument();
+  });
+
+  describe("dismiss notifications", () => {
+    it("removes a notification when dismiss button is clicked", () => {
+      const sessions = new Map([
+        ["session-1", buildSession({ sessionId: "session-1", activity: "idle", agentName: "agent-1" })],
+        ["session-2", buildSession({ sessionId: "session-2", activity: "pending_approval", agentName: "agent-2" })],
+        ["session-3", buildSession({ sessionId: "session-3", activity: "idle", agentName: "agent-3" })],
+      ]);
+      const activityChangedAt = new Map([
+        ["session-1", "2025-01-01T00:01:00Z"],
+        ["session-2", "2025-01-01T00:02:00Z"],
+        ["session-3", "2025-01-01T00:03:00Z"],
+      ]);
+
+      useSessionStore.setState({ sessions, activityChangedAt });
+
+      render(<NotificationPanel />);
+
+      expect(screen.getByText("Notifications (3)")).toBeInTheDocument();
+
+      const dismissButtons = screen.getAllByRole("button", { name: /dismiss notification/i });
+      // Click dismiss on the second item (agent-2)
+      fireEvent.click(dismissButtons[1]);
+
+      expect(screen.getByText("Notifications (2)")).toBeInTheDocument();
+      expect(screen.queryByText("agent-2")).not.toBeInTheDocument();
+      expect(screen.getByText("agent-1")).toBeInTheDocument();
+      expect(screen.getByText("agent-3")).toBeInTheDocument();
+    });
+
+    it("removes all notifications when Clear all is clicked", () => {
+      const sessions = new Map([
+        ["session-1", buildSession({ sessionId: "session-1", activity: "idle", agentName: "agent-1" })],
+        ["session-2", buildSession({ sessionId: "session-2", activity: "pending_approval", agentName: "agent-2" })],
+      ]);
+      const activityChangedAt = new Map([
+        ["session-1", "2025-01-01T00:01:00Z"],
+        ["session-2", "2025-01-01T00:02:00Z"],
+      ]);
+
+      useSessionStore.setState({ sessions, activityChangedAt });
+
+      render(<NotificationPanel />);
+
+      expect(screen.getByText("Notifications (2)")).toBeInTheDocument();
+
+      const clearAllButton = screen.getByRole("button", { name: /clear all/i });
+      fireEvent.click(clearAllButton);
+
+      expect(screen.getByText("Notifications (0)")).toBeInTheDocument();
+      expect(screen.getByText("No sessions need attention")).toBeInTheDocument();
+    });
+
+    it("does not show Clear all button when no entries are visible", () => {
+      render(<NotificationPanel />);
+
+      expect(screen.queryByRole("button", { name: /clear all/i })).not.toBeInTheDocument();
+    });
+
+    it("re-shows a dismissed notification after session cycles", () => {
+      const sessions = new Map([
+        ["session-1", buildSession({ sessionId: "session-1", activity: "idle", agentName: "cycling-agent" })],
+      ]);
+      const activityChangedAt = new Map([
+        ["session-1", "2025-01-01T00:01:00Z"],
+      ]);
+
+      useSessionStore.setState({ sessions, activityChangedAt });
+
+      const { rerender } = render(<NotificationPanel />);
+
+      // Dismiss the notification
+      const dismissButton = screen.getByRole("button", { name: /dismiss notification/i });
+      fireEvent.click(dismissButton);
+
+      expect(screen.getByText("Notifications (0)")).toBeInTheDocument();
+
+      // Simulate session cycling: activityChangedAt updates to a newer timestamp
+      useSessionStore.setState({
+        sessions,
+        activityChangedAt: new Map([["session-1", "2025-01-01T00:10:00Z"]]),
+      });
+
+      rerender(<NotificationPanel />);
+
+      expect(screen.getByText("Notifications (1)")).toBeInTheDocument();
+      expect(screen.getByText("cycling-agent")).toBeInTheDocument();
+    });
+
+    it("Clear all does not affect future notifications from new sessions", () => {
+      const sessions = new Map([
+        ["session-1", buildSession({ sessionId: "session-1", activity: "idle", agentName: "agent-1" })],
+      ]);
+      const activityChangedAt = new Map([
+        ["session-1", "2025-01-01T00:01:00Z"],
+      ]);
+
+      useSessionStore.setState({ sessions, activityChangedAt });
+
+      const { rerender } = render(<NotificationPanel />);
+
+      // Clear all
+      fireEvent.click(screen.getByRole("button", { name: /clear all/i }));
+      expect(screen.getByText("Notifications (0)")).toBeInTheDocument();
+
+      // New session arrives
+      const updatedSessions = new Map([
+        ["session-1", buildSession({ sessionId: "session-1", activity: "idle", agentName: "agent-1" })],
+        ["session-new", buildSession({ sessionId: "session-new", activity: "idle", agentName: "new-agent" })],
+      ]);
+      useSessionStore.setState({
+        sessions: updatedSessions,
+        activityChangedAt: new Map([
+          ["session-1", "2025-01-01T00:01:00Z"],
+          ["session-new", "2025-01-01T00:05:00Z"],
+        ]),
+      });
+
+      rerender(<NotificationPanel />);
+
+      // New session appears; dismissed session stays hidden
+      expect(screen.getByText("Notifications (1)")).toBeInTheDocument();
+      expect(screen.getByText("new-agent")).toBeInTheDocument();
+      expect(screen.queryByText("agent-1")).not.toBeInTheDocument();
+    });
   });
 });
