@@ -6,36 +6,34 @@ describe("cluster-store", () => {
 	beforeEach(() => {
 		useClusterStore.setState({
 			clusters: [],
-			unclustered: { podIds: [], attentionCount: 0 },
+			manualAssignments: {},
 			loading: false,
 		});
 	});
 
 	describe("setClusters", () => {
-		it("sets clusters and unclustered state", () => {
-			const clusters = [
+		it("sets clusters and manual assignments", () => {
+			const clusters: ClusterDefinition[] = [
 				{
 					id: "c1",
 					name: "Work",
 					directories: ["~/work/"],
 					sortOrder: 0,
-					podIds: ["pod-1"],
-					attentionCount: 1,
 				},
 			];
-			const unclustered = { podIds: ["pod-2"], attentionCount: 0 };
+			const manualAssignments = { "session-1": "c1" };
 
-			useClusterStore.getState().setClusters(clusters, unclustered);
+			useClusterStore.getState().setClusters(clusters, manualAssignments);
 
 			const state = useClusterStore.getState();
 			expect(state.clusters).toEqual(clusters);
-			expect(state.unclustered).toEqual(unclustered);
+			expect(state.manualAssignments).toEqual(manualAssignments);
 			expect(state.loading).toBe(false);
 		});
 	});
 
 	describe("addCluster", () => {
-		it("adds a new cluster with empty podIds", () => {
+		it("adds a new cluster definition", () => {
 			const cluster: ClusterDefinition = {
 				id: "c1",
 				name: "Work",
@@ -47,11 +45,7 @@ describe("cluster-store", () => {
 
 			const state = useClusterStore.getState();
 			expect(state.clusters).toHaveLength(1);
-			expect(state.clusters[0]).toEqual({
-				...cluster,
-				podIds: [],
-				attentionCount: 0,
-			});
+			expect(state.clusters[0]).toEqual(cluster);
 		});
 	});
 
@@ -64,11 +58,9 @@ describe("cluster-store", () => {
 						name: "Old",
 						directories: [],
 						sortOrder: 0,
-						podIds: ["pod-1"],
-						attentionCount: 1,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 
@@ -84,8 +76,6 @@ describe("cluster-store", () => {
 			const state = useClusterStore.getState();
 			expect(state.clusters[0].name).toBe("New");
 			expect(state.clusters[0].directories).toEqual(["~/new/"]);
-			// Preserves podIds from existing state
-			expect(state.clusters[0].podIds).toEqual(["pod-1"]);
 		});
 
 		it("does nothing if cluster not found", () => {
@@ -96,11 +86,9 @@ describe("cluster-store", () => {
 						name: "Work",
 						directories: [],
 						sortOrder: 0,
-						podIds: [],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 
@@ -120,7 +108,7 @@ describe("cluster-store", () => {
 	});
 
 	describe("removeCluster", () => {
-		it("removes cluster and moves pods to unclustered", () => {
+		it("removes cluster from list", () => {
 			useClusterStore.setState({
 				clusters: [
 					{
@@ -128,19 +116,15 @@ describe("cluster-store", () => {
 						name: "Work",
 						directories: [],
 						sortOrder: 0,
-						podIds: ["pod-1", "pod-2"],
-						attentionCount: 2,
 					},
 					{
 						id: "c2",
 						name: "Personal",
 						directories: [],
 						sortOrder: 1,
-						podIds: ["pod-3"],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: ["pod-4"], attentionCount: 1 },
+				manualAssignments: {},
 				loading: false,
 			});
 
@@ -149,8 +133,6 @@ describe("cluster-store", () => {
 			const state = useClusterStore.getState();
 			expect(state.clusters).toHaveLength(1);
 			expect(state.clusters[0].id).toBe("c2");
-			expect(state.unclustered.podIds).toEqual(["pod-4", "pod-1", "pod-2"]);
-			expect(state.unclustered.attentionCount).toBe(3);
 		});
 	});
 
@@ -163,27 +145,21 @@ describe("cluster-store", () => {
 						name: "First",
 						directories: [],
 						sortOrder: 0,
-						podIds: [],
-						attentionCount: 0,
 					},
 					{
 						id: "c2",
 						name: "Second",
 						directories: [],
 						sortOrder: 1,
-						podIds: [],
-						attentionCount: 0,
 					},
 					{
 						id: "c3",
 						name: "Third",
 						directories: [],
 						sortOrder: 2,
-						podIds: [],
-						attentionCount: 0,
 					},
 				],
-				unclustered: { podIds: [], attentionCount: 0 },
+				manualAssignments: {},
 				loading: false,
 			});
 
@@ -196,6 +172,41 @@ describe("cluster-store", () => {
 			expect(state.clusters[1].sortOrder).toBe(1);
 			expect(state.clusters[2].id).toBe("c2");
 			expect(state.clusters[2].sortOrder).toBe(2);
+		});
+	});
+
+	describe("setManualAssignment", () => {
+		it("sets a manual assignment", () => {
+			useClusterStore.getState().setManualAssignment("session-1", "c1");
+
+			const state = useClusterStore.getState();
+			expect(state.manualAssignments).toEqual({ "session-1": "c1" });
+		});
+
+		it("removes assignment when clusterId is null", () => {
+			useClusterStore.setState({
+				clusters: [],
+				manualAssignments: { "session-1": "c1" },
+				loading: false,
+			});
+
+			useClusterStore.getState().setManualAssignment("session-1", null);
+
+			const state = useClusterStore.getState();
+			expect(state.manualAssignments).toEqual({});
+		});
+
+		it("overwrites existing assignment", () => {
+			useClusterStore.setState({
+				clusters: [],
+				manualAssignments: { "session-1": "c1" },
+				loading: false,
+			});
+
+			useClusterStore.getState().setManualAssignment("session-1", "c2");
+
+			const state = useClusterStore.getState();
+			expect(state.manualAssignments).toEqual({ "session-1": "c2" });
 		});
 	});
 });

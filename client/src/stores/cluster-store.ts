@@ -1,50 +1,46 @@
 import { create } from "zustand";
 import type { ClusterDefinition } from "@pi-fleet/shared";
 
-export interface ClusterWithPods extends ClusterDefinition {
-	podIds: string[];
-	attentionCount: number;
-}
-
-export interface UnclusteredState {
-	podIds: string[];
-	attentionCount: number;
-}
-
-interface ClusterStore {
-	clusters: ClusterWithPods[];
-	unclustered: UnclusteredState;
+interface ClusterStoreState {
+	/** Cluster definitions (id, name, directories, sortOrder) */
+	clusters: ClusterDefinition[];
+	/** Manual session-to-cluster overrides */
+	manualAssignments: Record<string, string>;
+	/** Loading flag for initial fetch */
 	loading: boolean;
+}
 
-	/** Set full cluster state from API response */
+interface ClusterStoreActions {
+	/** Hydrate from server response */
 	setClusters: (
-		clusters: ClusterWithPods[],
-		unclustered: UnclusteredState,
+		clusters: ClusterDefinition[],
+		manualAssignments: Record<string, string>,
 	) => void;
-
 	/** Set loading state */
 	setLoading: (loading: boolean) => void;
 
 	/** Handle SSE: cluster created */
 	addCluster: (cluster: ClusterDefinition) => void;
-
 	/** Handle SSE: cluster updated */
 	updateCluster: (cluster: ClusterDefinition) => void;
-
 	/** Handle SSE: cluster deleted */
 	removeCluster: (clusterId: string) => void;
-
 	/** Handle SSE: clusters reordered */
 	reorderClusters: (orderedIds: string[]) => void;
+
+	/** Manual assignment mutation (optimistic, from drag-and-drop or SSE confirmation) */
+	setManualAssignment: (sessionId: string, clusterId: string | null) => void;
 }
+
+type ClusterStore = ClusterStoreState & ClusterStoreActions;
 
 export const useClusterStore = create<ClusterStore>((set) => ({
 	clusters: [],
-	unclustered: { podIds: [], attentionCount: 0 },
+	manualAssignments: {},
 	loading: false,
 
-	setClusters: (clusters, unclustered) => {
-		set({ clusters, unclustered, loading: false });
+	setClusters: (clusters, manualAssignments) => {
+		set({ clusters, manualAssignments, loading: false });
 	},
 
 	setLoading: (loading) => {
@@ -53,10 +49,7 @@ export const useClusterStore = create<ClusterStore>((set) => ({
 
 	addCluster: (cluster) => {
 		set((state) => ({
-			clusters: [
-				...state.clusters,
-				{ ...cluster, podIds: [], attentionCount: 0 },
-			],
+			clusters: [...state.clusters, cluster],
 		}));
 	},
 
@@ -69,26 +62,14 @@ export const useClusterStore = create<ClusterStore>((set) => ({
 	},
 
 	removeCluster: (clusterId) => {
-		set((state) => {
-			const removed = state.clusters.find((c) => c.id === clusterId);
-			const remainingClusters = state.clusters.filter(
-				(c) => c.id !== clusterId,
-			);
-			const movedPodIds = removed?.podIds ?? [];
-			const movedAttention = removed?.attentionCount ?? 0;
-			return {
-				clusters: remainingClusters,
-				unclustered: {
-					podIds: [...state.unclustered.podIds, ...movedPodIds],
-					attentionCount: state.unclustered.attentionCount + movedAttention,
-				},
-			};
-		});
+		set((state) => ({
+			clusters: state.clusters.filter((c) => c.id !== clusterId),
+		}));
 	},
 
 	reorderClusters: (orderedIds) => {
 		set((state) => {
-			const reordered = orderedIds.reduce<ClusterWithPods[]>(
+			const reordered = orderedIds.reduce<ClusterDefinition[]>(
 				(acc, id, index) => {
 					const cluster = state.clusters.find((c) => c.id === id);
 					if (cluster) {
@@ -99,6 +80,18 @@ export const useClusterStore = create<ClusterStore>((set) => ({
 				[],
 			);
 			return { clusters: reordered };
+		});
+	},
+
+	setManualAssignment: (sessionId, clusterId) => {
+		set((state) => {
+			const next = { ...state.manualAssignments };
+			if (clusterId === null) {
+				delete next[sessionId];
+			} else {
+				next[sessionId] = clusterId;
+			}
+			return { manualAssignments: next };
 		});
 	},
 }));
