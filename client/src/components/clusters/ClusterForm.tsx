@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Plus } from "lucide-react";
-import { useClusterStore } from "@/stores/cluster-store";
+import { getServerUrl } from "@/lib/bridge";
+import { createCluster, editCluster } from "@/api/cluster-api";
 import type { ClusterDefinition } from "@pi-fleet/shared";
 
 interface ClusterFormProps {
@@ -17,9 +18,8 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
     cluster?.directories ?? [""],
   );
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const createCluster = useClusterStore((state) => state.createCluster);
-  const editCluster = useClusterStore((state) => state.editCluster);
   const isEditing = cluster !== null && cluster !== undefined;
 
   function addDirectory(): void {
@@ -41,18 +41,34 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
     if (!name.trim()) return;
 
     setSubmitting(true);
+    setError(null);
+
+    const baseUrl = getServerUrl();
     const cleanDirectories = directories.filter((d) => d.trim().length > 0);
 
-    if (isEditing) {
-      await editCluster(cluster.id, {
-        name: name.trim(),
-        directories: cleanDirectories,
-      });
-    } else {
-      await createCluster(name.trim(), cleanDirectories);
-    }
+    const result = isEditing
+      ? await editCluster(baseUrl, cluster.id, {
+          name: name.trim(),
+          directories: cleanDirectories,
+        })
+      : await createCluster(baseUrl, {
+          name: name.trim(),
+          directories: cleanDirectories,
+        });
 
     setSubmitting(false);
+
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        network: "Network error. Check your connection.",
+        validation: "Invalid cluster data. Check your inputs.",
+        "not-found": "Cluster not found. It may have been deleted.",
+        "server-error": "Server error. Please try again.",
+      };
+      setError(messages[result.error] ?? "An unexpected error occurred.");
+      return;
+    }
+
     onClose();
   }
 
@@ -69,6 +85,12 @@ export function ClusterForm({ cluster, onClose }: ClusterFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+              {error}
+            </div>
+          )}
+
           <div>
             <label
               htmlFor="cluster-name"

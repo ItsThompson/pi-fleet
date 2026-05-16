@@ -12,6 +12,8 @@ import { ClusterHeader } from "@/components/clusters/ClusterHeader";
 import { ClusterForm } from "@/components/clusters/ClusterForm";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { computeUnclusteredPodIds } from "@/lib/cluster-utils";
+import { getServerUrl } from "@/lib/bridge";
+import { deleteCluster } from "@/api/cluster-api";
 
 interface ClusterViewProps {
   clusterId: string;
@@ -27,7 +29,6 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
   const allClusterPodIds = useClusterStore((state) =>
     state.clusters.map((c) => c.podIds),
   );
-  const deleteCluster = useClusterStore((state) => state.deleteCluster);
   const [showEditForm, setShowEditForm] = useState(false);
 
   const isUnclustered = clusterId === UNCLUSTERED_ID;
@@ -77,7 +78,10 @@ export function ClusterView({ clusterId }: ClusterViewProps) {
       `Delete cluster "${cluster!.name}"? Pods will move to Unclustered.`,
     );
     if (!confirmed) return;
-    await deleteCluster(cluster!.id);
+    const result = await deleteCluster(getServerUrl(), cluster!.id);
+    if (!result.ok) {
+      console.error("Failed to delete cluster:", result.error);
+    }
   }
 
   return (
