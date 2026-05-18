@@ -6,6 +6,7 @@ import {
 	detectTerminalApp,
 	activateTerminal,
 	openTerminal,
+	isValidPaneId,
 	TERMINAL_APP_ALLOWLIST,
 } from "./terminal-opener.js";
 import type {
@@ -279,6 +280,44 @@ describe("activateTerminal", () => {
 	});
 });
 
+describe("isValidPaneId", () => {
+	it("accepts %0", () => {
+		expect(isValidPaneId("%0")).toBe(true);
+	});
+
+	it("accepts %5", () => {
+		expect(isValidPaneId("%5")).toBe(true);
+	});
+
+	it("accepts %123", () => {
+		expect(isValidPaneId("%123")).toBe(true);
+	});
+
+	it("rejects old session:window.pane format", () => {
+		expect(isValidPaneId("main:1.0")).toBe(false);
+	});
+
+	it("rejects empty string", () => {
+		expect(isValidPaneId("")).toBe(false);
+	});
+
+	it("rejects bare number", () => {
+		expect(isValidPaneId("5")).toBe(false);
+	});
+
+	it("rejects % without digits", () => {
+		expect(isValidPaneId("%")).toBe(false);
+	});
+
+	it("rejects % with non-digit characters", () => {
+		expect(isValidPaneId("%abc")).toBe(false);
+	});
+
+	it("rejects target with trailing whitespace", () => {
+		expect(isValidPaneId("%5 ")).toBe(false);
+	});
+});
+
 describe("openTerminal (full flow)", () => {
 	it("succeeds with valid pane, single client, and terminal detected", async () => {
 		const calls: string[][] = [];
@@ -315,6 +354,33 @@ describe("openTerminal (full flow)", () => {
 		// Verify switch-client uses pane ID directly
 		const switchCall = calls.find((call) => call.includes("switch-client"));
 		expect(switchCall).toContain("%5");
+	});
+
+	it("returns invalid-target when pane ID format is malformed", async () => {
+		const exec: ExecFn = async () => ({ stdout: "", stderr: "" });
+		const notifications: Array<{ title: string; body: string }> = [];
+		const notify: NotifyFn = (title, body) =>
+			notifications.push({ title, body });
+
+		const result = await openTerminal("main:1.0", { exec, notify });
+
+		expect(result).toEqual({ ok: false, reason: "invalid-target" });
+		expect(notifications[0]).toEqual({
+			title: "Pi Fleet",
+			body: "Invalid tmux target formatting",
+		});
+	});
+
+	it("returns invalid-target for bare number without % prefix", async () => {
+		const exec: ExecFn = async () => ({ stdout: "", stderr: "" });
+		const notifications: Array<{ title: string; body: string }> = [];
+		const notify: NotifyFn = (title, body) =>
+			notifications.push({ title, body });
+
+		const result = await openTerminal("5", { exec, notify });
+
+		expect(result).toEqual({ ok: false, reason: "invalid-target" });
+		expect(notifications[0].body).toBe("Invalid tmux target formatting");
 	});
 
 	it("returns pane-not-found when session resolution fails", async () => {

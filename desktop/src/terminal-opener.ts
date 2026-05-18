@@ -1,5 +1,15 @@
 import type { OpenResult } from "@pi-fleet/shared";
 
+/**
+ * Validates that a tmux target matches the stable pane ID format: %N
+ * (e.g., "%0", "%5", "%123").
+ */
+const PANE_ID_RE = /^%\d+$/;
+
+export function isValidPaneId(target: string): boolean {
+	return PANE_ID_RE.test(target);
+}
+
 /** Allowlist of terminal apps safe for osascript activation */
 export const TERMINAL_APP_ALLOWLIST = [
 	"iTerm2",
@@ -142,6 +152,12 @@ export async function openTerminal(
 	deps: TerminalOpenerDeps,
 ): Promise<OpenResult> {
 	const { exec, notify } = deps;
+
+	// Step 0: Validate pane ID format
+	if (!isValidPaneId(paneId)) {
+		notify("Pi Fleet", "Invalid tmux target formatting");
+		return { ok: false, reason: "invalid-target" };
+	}
 
 	// Step 1: Resolve session from pane ID (also validates pane exists)
 	const session = await resolveSession(paneId, exec);
