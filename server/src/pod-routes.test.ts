@@ -214,6 +214,78 @@ describe("Pod Routes (integration)", () => {
 		expect(parentPodAfter.memberSessionIds).toContain("late-child");
 	});
 
+	it("GET /api/pods returns single pod for three-level hierarchy", async () => {
+		// Register root A
+		await server.app.inject({
+			method: "POST",
+			url: "/api/sessions/register",
+			payload: {
+				sessionId: "A",
+				pid: 1000,
+				cwd: "/root",
+				tmuxTarget: null,
+				startTime: new Date().toISOString(),
+				agentName: "Orchestrator",
+			},
+		});
+
+		// Register intermediate B
+		await server.app.inject({
+			method: "POST",
+			url: "/api/sessions/register",
+			payload: {
+				sessionId: "B",
+				pid: 2000,
+				cwd: "/b",
+				tmuxTarget: null,
+				startTime: new Date().toISOString(),
+				subagentId: "sub-B",
+			},
+		});
+
+		// Register leaf D
+		await server.app.inject({
+			method: "POST",
+			url: "/api/sessions/register",
+			payload: {
+				sessionId: "D",
+				pid: 3000,
+				cwd: "/d",
+				tmuxTarget: null,
+				startTime: new Date().toISOString(),
+				subagentId: "sub-D",
+			},
+		});
+
+		// A claims B
+		await server.app.inject({
+			method: "POST",
+			url: "/api/pods/ownership",
+			payload: { parentSessionId: "A", subagentIds: ["sub-B"] },
+		});
+
+		// B claims D
+		await server.app.inject({
+			method: "POST",
+			url: "/api/pods/ownership",
+			payload: { parentSessionId: "B", subagentIds: ["sub-D"] },
+		});
+
+		// Verify single pod with all members
+		const response = await server.app.inject({
+			method: "GET",
+			url: "/api/pods",
+		});
+
+		const body = response.json();
+		expect(body.pods).toHaveLength(1);
+		expect(body.pods[0].leadSessionId).toBe("A");
+		expect(body.pods[0].memberSessionIds).toContain("A");
+		expect(body.pods[0].memberSessionIds).toContain("B");
+		expect(body.pods[0].memberSessionIds).toContain("D");
+		expect(body.pods[0].displayName).toBe("Orchestrator");
+	});
+
 	it("GET /api/health includes real pod count", async () => {
 		// Register two sessions
 		await server.app.inject({
