@@ -95,14 +95,30 @@ export class PodRegistry {
 			return { matchedIds, unmatchedIds };
 		}
 
+		// Find the root ancestor: if this session is an intermediate node,
+		// the root's pod should be updated
+		const rootId = this.findRootAncestor(parentSessionId);
+
 		if (!previousIds) {
-			// First ownership report: pod is being formed (was single-member before)
+			// First ownership report
 			if (matchedIds.length > 0) {
-				this.emit({ type: "pod:formed", pod: this.buildPod(parentSessionId) });
+				if (rootId === parentSessionId) {
+					// This is the root: pod is being formed
+					this.emit({
+						type: "pod:formed",
+						pod: this.buildPod(parentSessionId),
+					});
+				} else {
+					// This is an intermediate node: root's pod updates
+					this.emit({
+						type: "pod:updated",
+						pod: this.buildPod(rootId),
+					});
+				}
 			}
 		} else {
 			// Subsequent report: pod updated
-			this.emit({ type: "pod:updated", pod: this.buildPod(parentSessionId) });
+			this.emit({ type: "pod:updated", pod: this.buildPod(rootId) });
 		}
 
 		return { matchedIds, unmatchedIds };
@@ -146,22 +162,20 @@ export class PodRegistry {
 
 	/**
 	 * Find the lead session ID for the pod containing this session.
+	 * Walks up to the root ancestor for deep trees.
 	 */
 	private findLeadForSession(sessionId: string): string | undefined {
-		// Check if this session IS a lead (has ownership or is standalone)
 		const session = this.sessionRegistry.get(sessionId);
 		if (!session) {
 			return undefined;
 		}
 
-		// Check if it's a child claimed by a parent
-		if (session.subagentId) {
-			const parentId = this.findParentBySubagentId(session.subagentId);
-			if (parentId) {
-				return parentId;
-			}
+		const rootId = this.findRootAncestor(sessionId);
+		// Verify root exists and has ownership (is actually a pod lead)
+		if (this.ownershipMap.has(rootId)) {
+			return rootId;
 		}
-		// It's either a standalone session or a parent itself
+		// Not in a multi-member pod: standalone session
 		return sessionId;
 	}
 
@@ -190,7 +204,9 @@ export class PodRegistry {
 			if (subagentIds.includes(session.subagentId)) {
 				const parentSession = this.sessionRegistry.get(parentId);
 				if (parentSession) {
-					this.emit({ type: "pod:updated", pod: this.buildPod(parentId) });
+					// Walk up to root ancestor and emit for the root's pod
+					const rootId = this.findRootAncestor(parentId);
+					this.emit({ type: "pod:updated", pod: this.buildPod(rootId) });
 				}
 				return;
 			}
@@ -220,30 +236,67 @@ export class PodRegistry {
 			]);
 		}
 
+		// Walk up to root ancestor for the inferred parent
+		const rootId = this.findRootAncestor(inferredParent.sessionId);
+		const isFirstOwnership = existingIds.length === 0;
+
 		this.emit({
-			type: existingIds.length === 0 ? "pod:formed" : "pod:updated",
-			pod: this.buildPod(inferredParent.sessionId),
+			type: isFirstOwnership ? "pod:formed" : "pod:updated",
+			pod: this.buildPod(rootId),
 		});
 	}
 
 	/**
 	 * Called when a session is removed.
-	 * If parent: children become independent pods (dissolved + new formed events).
-	 * If child: removed from pod, pod:updated emitted.
+	 * Handles three cases:
+	 * 1. Root parent dies: children form their own pods (multi-member if they have ownership)
+	 * 2. Intermediate node dies: grandparent pod shrinks, orphaned children become roots
+	 * 3. Leaf child dies: parent's pod updates
 	 */
 	handleSessionRemoved(sessionId: string): void {
-		// Case 1: The removed session is a parent
-		if (this.ownershipMap.has(sessionId)) {
+		const isParent = this.ownershipMap.has(sessionId);
+
+		if (isParent) {
+			// This session had its own ownership entry (root or intermediate)
 			const subagentIds = this.ownershipMap.get(sessionId)!;
 			this.ownershipMap.delete(sessionId);
 
-			// Emit pod:dissolved for the parent's pod
-			this.emit({ type: "pod:dissolved", leadSessionId: sessionId });
+			// Check if this session was also claimed by a grandparent
+			const orphanInfo = this.findOrphanedSubagentId();
+			if (orphanInfo) {
+				// Intermediate death: remove from grandparent's ownership list
+				const grandparentIds = this.ownershipMap.get(orphanInfo.parentId) ?? [];
+				this.ownershipMap.set(
+					orphanInfo.parentId,
+					grandparentIds.filter((id) => id !== orphanInfo.subagentId),
+				);
 
-			// Each child that is still registered becomes an independent single-member pod
+				// Emit pod:updated for the grandparent's root pod
+				const rootId = this.findRootAncestor(orphanInfo.parentId);
+				const rootSession = this.sessionRegistry.get(rootId);
+				if (rootSession) {
+					this.emit({ type: "pod:updated", pod: this.buildPod(rootId) });
+				}
+			} else {
+				// Root death: emit pod:dissolved
+				this.emit({ type: "pod:dissolved", leadSessionId: sessionId });
+			}
+
+			// Each direct child: form their own pod (multi-member if they have ownership)
 			subagentIds.forEach((subagentId) => {
 				const childSession = this.findSessionBySubagentId(subagentId);
-				if (childSession) {
+				if (!childSession) {
+					return;
+				}
+
+				if (this.ownershipMap.has(childSession.sessionId)) {
+					// Child has its own ownership: promote to multi-member pod root
+					this.emit({
+						type: "pod:formed",
+						pod: this.buildPod(childSession.sessionId),
+					});
+				} else {
+					// Child has no ownership: standalone pod
 					this.emit({
 						type: "pod:formed",
 						pod: this.buildSingleMemberPod(childSession),
@@ -253,27 +306,24 @@ export class PodRegistry {
 			return;
 		}
 
-		// Case 2: The removed session is a child
-		const session = this.findRemovedSessionSubagentId(sessionId);
-		if (!session) {
+		// Case 2: The removed session is a leaf child
+		const orphanInfo = this.findOrphanedSubagentId();
+		if (!orphanInfo) {
 			return;
 		}
 
-		for (const [parentId] of this.ownershipMap) {
-			const parentSession = this.sessionRegistry.get(parentId);
-			if (parentSession) {
-				// Check if this child was part of this parent's pod
-				const pod = this.buildPod(parentId);
-				// The child is already removed from registry, so just emit update
-				this.emit({ type: "pod:updated", pod });
-				return;
-			}
+		// Find the root of the affected pod and emit update
+		const rootId = this.findRootAncestor(orphanInfo.parentId);
+		const rootSession = this.sessionRegistry.get(rootId);
+		if (rootSession) {
+			this.emit({ type: "pod:updated", pod: this.buildPod(rootId) });
 		}
 	}
 
 	/**
 	 * Get all computed pods.
-	 * Sessions under a parent's ownership are grouped.
+	 * Identifies root sessions (those not claimed by any other parent),
+	 * collects their full subtrees, and builds one pod per root.
 	 * Sessions without ownership are single-member pods.
 	 */
 	getPods(): Pod[] {
@@ -281,62 +331,35 @@ export class PodRegistry {
 		const claimedSessionIds = new Set<string>();
 		const pods: Pod[] = [];
 
-		// Build multi-member pods from ownership reports
-		this.ownershipMap.forEach((subagentIds, parentId) => {
+		// Build the set of all subagentIds claimed by any parent
+		const allClaimedSubagentIds = new Set<string>();
+		this.ownershipMap.forEach((subagentIds) => {
+			subagentIds.forEach((id) => allClaimedSubagentIds.add(id));
+		});
+
+		// Identify root sessions: those that have an ownershipMap entry
+		// and whose subagentId is NOT claimed by any other parent
+		const roots: string[] = [];
+		this.ownershipMap.forEach((_subagentIds, parentId) => {
 			const parentSession = this.sessionRegistry.get(parentId);
 			if (!parentSession) {
 				return;
 			}
 
-			claimedSessionIds.add(parentId);
-			const memberSessions: RegisteredSession[] = [parentSession];
-
-			subagentIds.forEach((subagentId) => {
-				const childSession = this.findSessionBySubagentId(subagentId);
-				if (childSession) {
-					claimedSessionIds.add(childSession.sessionId);
-					memberSessions.push(childSession);
-				}
-			});
-
-			pods.push(this.buildPodFromMembers(parentSession, memberSessions));
+			// A root has no subagentId, or its subagentId is not claimed by anyone
+			if (
+				!parentSession.subagentId ||
+				!allClaimedSubagentIds.has(parentSession.subagentId)
+			) {
+				roots.push(parentId);
+			}
 		});
 
-		// Infer pods for unclaimed subagent sessions via CWD matching.
-		// Groups a child with its parent when exactly one non-subagent session
-		// shares the same cwd (avoids ambiguity with multiple candidates).
-		const inferredGroups = new Map<string, RegisteredSession[]>();
-		allSessions.forEach((session) => {
-			if (claimedSessionIds.has(session.sessionId)) {
-				return;
-			}
-			if (!session.subagentId) {
-				return;
-			}
-
-			const candidates = allSessions.filter(
-				(other) =>
-					other.sessionId !== session.sessionId &&
-					other.cwd === session.cwd &&
-					!other.subagentId &&
-					!claimedSessionIds.has(other.sessionId),
-			);
-			if (candidates.length !== 1) {
-				return;
-			}
-
-			const parent = candidates[0];
-			claimedSessionIds.add(session.sessionId);
-			claimedSessionIds.add(parent.sessionId);
-
-			const group = inferredGroups.get(parent.sessionId) ?? [parent];
-			group.push(session);
-			inferredGroups.set(parent.sessionId, group);
-		});
-
-		inferredGroups.forEach((members, parentId) => {
-			const parent = members[0];
-			pods.push(this.buildPodFromMembers(parent, members));
+		// Build multi-member pods from each root's full subtree
+		roots.forEach((rootId) => {
+			const pod = this.buildPod(rootId);
+			pod.memberSessionIds.forEach((id) => claimedSessionIds.add(id));
+			pods.push(pod);
 		});
 
 		// Build single-member pods for unclaimed sessions
@@ -373,47 +396,99 @@ export class PodRegistry {
 	}
 
 	/**
-	 * When a session is removed, we can't look it up anymore.
-	 * Check if any parent's ownership list references a subagentId
-	 * that no longer maps to a registered session.
-	 * Returns a synthetic marker if found, undefined otherwise.
+	 * Walk up the ownership graph to find the root ancestor of a session.
+	 * Uses a visited set for cycle detection: if a cycle is found,
+	 * treats the current session as the root.
 	 */
-	private findRemovedSessionSubagentId(
-		_sessionId: string,
-	): { found: true } | undefined {
-		// We can't look up the removed session's subagentId directly since
-		// it's already gone from the registry. Instead, we check all pods
-		// and emit updates for any that have changed membership.
+	private findRootAncestor(sessionId: string): string {
+		const visited = new Set<string>();
+		let currentId = sessionId;
+
+		while (true) {
+			if (visited.has(currentId)) {
+				// Cycle detected: treat this session as root
+				return currentId;
+			}
+			visited.add(currentId);
+
+			const session = this.sessionRegistry.get(currentId);
+			if (!session?.subagentId) {
+				return currentId;
+			}
+
+			const parentId = this.findParentBySubagentId(session.subagentId);
+			if (!parentId) {
+				return currentId;
+			}
+
+			currentId = parentId;
+		}
+	}
+
+	/**
+	 * Walk down the ownership graph collecting all reachable descendants.
+	 * Uses a visited set for cycle detection: skips already-visited nodes.
+	 */
+	private collectDescendants(
+		sessionId: string,
+		visited: Set<string> = new Set(),
+	): RegisteredSession[] {
+		const descendants: RegisteredSession[] = [];
+		const subagentIds = this.ownershipMap.get(sessionId);
+		if (!subagentIds) {
+			return descendants;
+		}
+
+		visited.add(sessionId);
+
+		subagentIds.forEach((subagentId) => {
+			const childSession = this.findSessionBySubagentId(subagentId);
+			if (!childSession || visited.has(childSession.sessionId)) {
+				return;
+			}
+			descendants.push(childSession);
+			const grandchildren = this.collectDescendants(
+				childSession.sessionId,
+				visited,
+			);
+			descendants.push(...grandchildren);
+		});
+
+		return descendants;
+	}
+
+	/**
+	 * Find a subagentId in the ownershipMap that no longer resolves to a
+	 * registered session. Returns the parentId and orphaned subagentId
+	 * so the caller can clean up the grandparent's ownership list.
+	 */
+	private findOrphanedSubagentId():
+		| {
+				parentId: string;
+				subagentId: string;
+		  }
+		| undefined {
 		for (const [parentId, subagentIds] of this.ownershipMap) {
 			const parentSession = this.sessionRegistry.get(parentId);
 			if (!parentSession) {
 				continue;
 			}
 
-			// If any claimed subagentId no longer resolves, this pod was affected
-			const hasUnresolved = subagentIds.some(
+			const orphaned = subagentIds.find(
 				(id) => !this.findSessionBySubagentId(id),
 			);
-			if (hasUnresolved) {
-				return { found: true };
+			if (orphaned) {
+				return { parentId, subagentId: orphaned };
 			}
 		}
 		return undefined;
 	}
 
-	private buildPod(parentId: string): Pod {
-		const parentSession = this.sessionRegistry.get(parentId)!;
-		const subagentIds = this.ownershipMap.get(parentId) ?? [];
-		const memberSessions: RegisteredSession[] = [parentSession];
-
-		subagentIds.forEach((subagentId) => {
-			const childSession = this.findSessionBySubagentId(subagentId);
-			if (childSession) {
-				memberSessions.push(childSession);
-			}
-		});
-
-		return this.buildPodFromMembers(parentSession, memberSessions);
+	private buildPod(rootId: string): Pod {
+		const rootSession = this.sessionRegistry.get(rootId)!;
+		const descendants = this.collectDescendants(rootId);
+		const memberSessions: RegisteredSession[] = [rootSession, ...descendants];
+		return this.buildPodFromMembers(rootSession, memberSessions);
 	}
 
 	private buildPodFromMembers(

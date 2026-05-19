@@ -395,6 +395,400 @@ describe("PodRegistry", () => {
 		});
 	});
 
+	describe("recursive subagent trees", () => {
+		it("three-level tree produces single pod with all members", () => {
+			// A → [B, C], B → [D, E]
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/root" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "C", cwd: "/c", subagentId: "sub-C" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "E", cwd: "/e", subagentId: "sub-E" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B", "sub-C"]);
+			podRegistry.reportOwnership("B", ["sub-D", "sub-E"]);
+
+			const pods = podRegistry.getPods();
+			expect(pods).toHaveLength(1);
+			expect(pods[0].leadSessionId).toBe("A");
+			expect(pods[0].memberSessionIds).toContain("A");
+			expect(pods[0].memberSessionIds).toContain("B");
+			expect(pods[0].memberSessionIds).toContain("C");
+			expect(pods[0].memberSessionIds).toContain("D");
+			expect(pods[0].memberSessionIds).toContain("E");
+		});
+
+		it("two independent trees produce two separate pods", () => {
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "X", cwd: "/x" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "Y", cwd: "/y", subagentId: "sub-Y" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("X", ["sub-Y"]);
+
+			const pods = podRegistry.getPods();
+			expect(pods).toHaveLength(2);
+
+			const podA = pods.find((p) => p.leadSessionId === "A")!;
+			expect(podA.memberSessionIds).toEqual(expect.arrayContaining(["A", "B"]));
+
+			const podX = pods.find((p) => p.leadSessionId === "X")!;
+			expect(podX.memberSessionIds).toEqual(expect.arrayContaining(["X", "Y"]));
+		});
+
+		it("intermediate node appears as member, not lead", () => {
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-D"]);
+
+			const pods = podRegistry.getPods();
+			expect(pods).toHaveLength(1);
+			expect(pods[0].leadSessionId).toBe("A");
+			expect(pods[0].memberSessionIds).toContain("B");
+			expect(pods[0].memberSessionIds).toContain("D");
+		});
+
+		it("orphaned subagent (parent dead, has no claimer) leads its own pod", () => {
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+
+			// B claims D, but nobody claims B (orphan)
+			podRegistry.reportOwnership("B", ["sub-D"]);
+
+			const pods = podRegistry.getPods();
+			const podB = pods.find((p) => p.leadSessionId === "B")!;
+			expect(podB).toBeDefined();
+			expect(podB.memberSessionIds).toEqual(expect.arrayContaining(["B", "D"]));
+		});
+
+		it("cycle in ownership does not cause infinite loop", () => {
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a", subagentId: "sub-A" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+
+			// A claims B, B claims A → cycle
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-A"]);
+
+			// Should not hang and should produce deterministic pods
+			const pods = podRegistry.getPods();
+			expect(pods.length).toBeGreaterThanOrEqual(1);
+			// All sessions should be accounted for
+			const allMembers = pods.flatMap((p) => p.memberSessionIds);
+			expect(allMembers).toContain("A");
+			expect(allMembers).toContain("B");
+		});
+	});
+
+	describe("recursive tree: intermediate death", () => {
+		it("intermediate node dies: its children become standalone", () => {
+			// A → B → [D, E]
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "E", cwd: "/e", subagentId: "sub-E" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-D", "sub-E"]);
+			events.length = 0;
+
+			// B dies
+			sessionRegistry.unregister("B");
+			podRegistry.handleSessionRemoved("B");
+
+			const pods = podRegistry.getPods();
+			// A alone, D standalone, E standalone
+			const podA = pods.find((p) => p.leadSessionId === "A")!;
+			expect(podA.memberSessionIds).toEqual(["A"]);
+
+			const podD = pods.find((p) => p.leadSessionId === "D")!;
+			expect(podD.memberSessionIds).toEqual(["D"]);
+
+			const podE = pods.find((p) => p.leadSessionId === "E")!;
+			expect(podE.memberSessionIds).toEqual(["E"]);
+		});
+
+		it("intermediate death with deep orphan: orphan promotes to multi-member pod", () => {
+			// A → B → D → F
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "F", cwd: "/f", subagentId: "sub-F" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-D"]);
+			podRegistry.reportOwnership("D", ["sub-F"]);
+			events.length = 0;
+
+			// B dies
+			sessionRegistry.unregister("B");
+			podRegistry.handleSessionRemoved("B");
+
+			const pods = podRegistry.getPods();
+			// A alone, D promotes to root leading [D, F]
+			const podA = pods.find((p) => p.leadSessionId === "A")!;
+			expect(podA.memberSessionIds).toEqual(["A"]);
+
+			const podD = pods.find((p) => p.leadSessionId === "D")!;
+			expect(podD.memberSessionIds).toEqual(expect.arrayContaining(["D", "F"]));
+		});
+
+		it("root death with intermediate child: child promotes to multi-member pod", () => {
+			// A → B → D
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-D"]);
+			events.length = 0;
+
+			// A dies
+			sessionRegistry.unregister("A");
+			podRegistry.handleSessionRemoved("A");
+
+			const pods = podRegistry.getPods();
+			// B promotes to root leading [B, D]
+			const podB = pods.find((p) => p.leadSessionId === "B")!;
+			expect(podB).toBeDefined();
+			expect(podB.memberSessionIds).toEqual(expect.arrayContaining(["B", "D"]));
+		});
+
+		it("root death: children without ownership become standalone", () => {
+			// A → [B, C] (neither B nor C have ownership entries)
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "C", cwd: "/c", subagentId: "sub-C" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B", "sub-C"]);
+			events.length = 0;
+
+			// A dies
+			sessionRegistry.unregister("A");
+			podRegistry.handleSessionRemoved("A");
+
+			const pods = podRegistry.getPods();
+			expect(pods).toHaveLength(2);
+			expect(pods.every((p) => p.memberSessionIds.length === 1)).toBe(true);
+		});
+	});
+
+	describe("recursive tree: late registration", () => {
+		it("late registration at depth > 1 resolves to root pod", () => {
+			// A → B, B claims sub-D (not yet registered)
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-D"]);
+			events.length = 0;
+
+			// D registers late
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+			podRegistry.handleSessionRegistered("D");
+
+			const pods = podRegistry.getPods();
+			expect(pods).toHaveLength(1);
+			expect(pods[0].leadSessionId).toBe("A");
+			expect(pods[0].memberSessionIds).toContain("D");
+		});
+	});
+
+	describe("recursive tree: intermediate reports ownership", () => {
+		it("intermediate node reports ownership: root pod includes grandchildren", () => {
+			// A claims B. B reports ownership of [D, E].
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "E", cwd: "/e", subagentId: "sub-E" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			events.length = 0;
+
+			podRegistry.reportOwnership("B", ["sub-D", "sub-E"]);
+
+			const pods = podRegistry.getPods();
+			expect(pods).toHaveLength(1);
+			expect(pods[0].leadSessionId).toBe("A");
+			expect(pods[0].memberSessionIds).toEqual(
+				expect.arrayContaining(["A", "B", "D", "E"]),
+			);
+		});
+
+		it("B reports ownership but nobody claims B: B leads its own pod", () => {
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "E", cwd: "/e", subagentId: "sub-E" }),
+			);
+
+			podRegistry.reportOwnership("B", ["sub-D", "sub-E"]);
+
+			const pods = podRegistry.getPods();
+			const podB = pods.find((p) => p.leadSessionId === "B")!;
+			expect(podB).toBeDefined();
+			expect(podB.memberSessionIds).toEqual(
+				expect.arrayContaining(["B", "D", "E"]),
+			);
+		});
+	});
+
+	describe("recursive tree: grandchild state propagation", () => {
+		it("grandchild heartbeat propagates to root pod state", () => {
+			// A → B → D
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-D"]);
+
+			// Set A and B to processing (non-attention state)
+			sessionRegistry.heartbeat({
+				sessionId: "A",
+				activity: "processing",
+				lastEventTime: new Date().toISOString(),
+			});
+			sessionRegistry.heartbeat({
+				sessionId: "B",
+				activity: "processing",
+				lastEventTime: new Date().toISOString(),
+			});
+
+			// D has pending_approval
+			sessionRegistry.heartbeat({
+				sessionId: "D",
+				activity: "pending_approval",
+				lastEventTime: new Date().toISOString(),
+			});
+
+			const pods = podRegistry.getPods();
+			const podA = pods.find((p) => p.leadSessionId === "A")!;
+			expect(podA.state).toBe("pending_approval");
+			expect(podA.attentionCount).toBe(1);
+		});
+	});
+
+	describe("recursive tree: findLeadForSession", () => {
+		it("grandchild activity change triggers pod:updated on root pod", () => {
+			// A → B → D
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "A", cwd: "/a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "B", cwd: "/b", subagentId: "sub-B" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "D", cwd: "/d", subagentId: "sub-D" }),
+			);
+
+			podRegistry.reportOwnership("A", ["sub-B"]);
+			podRegistry.reportOwnership("B", ["sub-D"]);
+			events.length = 0;
+
+			// D heartbeat triggers handleSessionUpdated
+			sessionRegistry.heartbeat({
+				sessionId: "D",
+				activity: "pending_approval",
+				lastEventTime: new Date().toISOString(),
+			});
+			podRegistry.handleSessionUpdated("D");
+
+			const updatedEvents = events.filter((e) => e.type === "pod:updated");
+			expect(updatedEvents.length).toBeGreaterThanOrEqual(1);
+			const rootUpdate = updatedEvents.find(
+				(e) => e.type === "pod:updated" && e.pod.leadSessionId === "A",
+			);
+			expect(rootUpdate).toBeDefined();
+		});
+	});
+
 	describe("CWD-based pod inference", () => {
 		it("infers parent when exactly one non-subagent session shares cwd", () => {
 			sessionRegistry.register(
