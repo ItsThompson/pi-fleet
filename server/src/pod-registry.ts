@@ -312,11 +312,28 @@ export class PodRegistry {
 			return;
 		}
 
+		// Clean the stale subagentId from the parent's ownership list
+		const parentIds = this.ownershipMap.get(orphanInfo.parentId) ?? [];
+		const cleaned = parentIds.filter((id) => id !== orphanInfo.subagentId);
+		if (cleaned.length > 0) {
+			this.ownershipMap.set(orphanInfo.parentId, cleaned);
+		} else {
+			this.ownershipMap.delete(orphanInfo.parentId);
+		}
+
 		// Find the root of the affected pod and emit update
 		const rootId = this.findRootAncestor(orphanInfo.parentId);
 		const rootSession = this.sessionRegistry.get(rootId);
 		if (rootSession) {
-			this.emit({ type: "pod:updated", pod: this.buildPod(rootId) });
+			if (this.ownershipMap.has(rootId)) {
+				this.emit({ type: "pod:updated", pod: this.buildPod(rootId) });
+			} else {
+				// Root lost all children: emit updated single-member pod
+				this.emit({
+					type: "pod:updated",
+					pod: this.buildSingleMemberPod(rootSession),
+				});
+			}
 		}
 	}
 

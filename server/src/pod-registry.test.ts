@@ -240,6 +240,32 @@ describe("PodRegistry", () => {
 			expect(parentPod!.memberSessionIds).toContain("child-2");
 			expect(parentPod!.memberSessionIds).not.toContain("child-1");
 		});
+
+		it("sequential leaf deaths correctly clean stale subagentIds", () => {
+			sessionRegistry.register(buildRegisterBody({ sessionId: "parent" }));
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "child-1", subagentId: "agent-a" }),
+			);
+			sessionRegistry.register(
+				buildRegisterBody({ sessionId: "child-2", subagentId: "agent-b" }),
+			);
+			podRegistry.reportOwnership("parent", ["agent-a", "agent-b"]);
+
+			// Remove first child
+			sessionRegistry.unregister("child-1");
+			podRegistry.handleSessionRemoved("child-1");
+			events.length = 0;
+
+			// Remove second child
+			sessionRegistry.unregister("child-2");
+			podRegistry.handleSessionRemoved("child-2");
+
+			// Parent should now be a standalone single-member pod
+			const pods = podRegistry.getPods();
+			expect(pods).toHaveLength(1);
+			expect(pods[0].leadSessionId).toBe("parent");
+			expect(pods[0].memberSessionIds).toEqual(["parent"]);
+		});
 	});
 
 	describe("state aggregation", () => {
