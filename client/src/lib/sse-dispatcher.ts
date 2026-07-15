@@ -4,6 +4,7 @@
  * Malformed events are logged and discarded: they never corrupt store state.
  */
 import { z } from "zod";
+import { ACTIVITY_STATUSES } from "@pi-fleet/shared";
 import { useSessionStore } from "@/stores/session-store";
 import { usePodStore } from "@/stores/pod-store";
 import { useClusterStore } from "@/stores/cluster-store";
@@ -11,12 +12,7 @@ import { useNavigationStore } from "@/stores/navigation-store";
 
 // --- Zod schemas (dispatcher-internal, not exported) ---
 
-const activityStatusSchema = z.enum([
-	"processing",
-	"running_tool",
-	"idle",
-	"pending_approval",
-]);
+const activityStatusSchema = z.enum(ACTIVITY_STATUSES);
 
 const contextUsageSchema = z.object({
 	tokens: z.number().nullable(),

@@ -269,24 +269,24 @@ describe("PodRegistry", () => {
 	});
 
 	describe("state aggregation", () => {
-		it("pod state = worst state among members (pending_approval > idle > running_tool > processing)", () => {
+		it("pod state = worst state among members (pending_approval > processing > running_tool > idle)", () => {
 			sessionRegistry.register(buildRegisterBody({ sessionId: "parent" }));
 			sessionRegistry.register(
 				buildRegisterBody({ sessionId: "child-1", subagentId: "agent-a" }),
 			);
 			podRegistry.reportOwnership("parent", ["agent-a"]);
 
-			// Parent is idle, child is processing (default)
+			// Parent stays idle (default); child transitions to processing.
 			sessionRegistry.heartbeat({
-				sessionId: "parent",
-				activity: "idle",
+				sessionId: "child-1",
+				activity: "processing",
 				lastEventTime: new Date().toISOString(),
 			});
 
 			const pods = podRegistry.getPods();
 			const pod = pods.find((p) => p.leadSessionId === "parent")!;
-			// idle (3) > processing (1), so pod state = idle
-			expect(pod.state).toBe("idle");
+			// processing (3) > idle (1), so pod state = processing
+			expect(pod.state).toBe("processing");
 		});
 
 		it("pending_approval overrides all other states", () => {

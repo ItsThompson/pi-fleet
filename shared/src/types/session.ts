@@ -1,14 +1,18 @@
 /**
- * Possible activity states for a pi session.
- * Ordered from lowest to highest priority for aggregation.
+ * Canonical list of activity states for a pi session. Single source of truth:
+ * the ActivityStatus type, the Zod validators, and STATE_PRIORITY keys all
+ * derive from this array, so the set of states can never silently drift.
  *
- * String union (not enum) for better tree-shaking and Zod inference.
+ * Ordered from lowest to highest priority for aggregation.
  */
-export type ActivityStatus =
-	| "processing"
-	| "running_tool"
-	| "idle"
-	| "pending_approval";
+export const ACTIVITY_STATUSES = [
+	"idle",
+	"running_tool",
+	"processing",
+	"pending_approval",
+] as const;
+
+export type ActivityStatus = (typeof ACTIVITY_STATUSES)[number];
 
 export interface ContextUsagePayload {
 	/** Tokens used, or null if unknown (e.g., before first LLM call) */

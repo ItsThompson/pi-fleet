@@ -542,15 +542,16 @@ export class PodRegistry {
 
 	/**
 	 * Pod state = worst state among members.
-	 * Priority: pending_approval > idle > running_tool > processing
+	 * Priority: pending_approval > processing > running_tool > idle
+	 * members is always non-empty (the lead is always a member), so reduce needs no seed.
 	 */
 	private aggregateState(members: RegisteredSession[]): ActivityStatus {
-		return members.reduce<ActivityStatus>((worst, member) => {
-			if (STATE_PRIORITY[member.activity] > STATE_PRIORITY[worst]) {
-				return member.activity;
-			}
-			return worst;
-		}, "processing");
+		const worstMember = members.reduce((worst, member) =>
+			STATE_PRIORITY[member.activity] > STATE_PRIORITY[worst.activity]
+				? member
+				: worst,
+		);
+		return worstMember.activity;
 	}
 
 	/**
