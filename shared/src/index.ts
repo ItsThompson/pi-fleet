@@ -9,6 +9,7 @@ export type {
 	HeartbeatBody,
 	RegisteredSession,
 } from "./types/session.js";
+export { ACTIVITY_STATUSES } from "./types/session.js";
 
 // Types: pod
 export type { Pod } from "./types/pod.js";

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
 	STATE_PRIORITY,
+	ACTIVITY_STATUSES,
 	SERVER_PORT,
 	HEARTBEAT_INTERVAL_MS,
 	REAP_TIMEOUT_MS,
@@ -35,9 +36,9 @@ describe("index barrel exports", () => {
 	});
 
 	it("exports STATE_PRIORITY with correct keys", () => {
-		expect(STATE_PRIORITY.processing).toBe(1);
+		expect(STATE_PRIORITY.idle).toBe(1);
 		expect(STATE_PRIORITY.running_tool).toBe(2);
-		expect(STATE_PRIORITY.idle).toBe(3);
+		expect(STATE_PRIORITY.processing).toBe(3);
 		expect(STATE_PRIORITY.pending_approval).toBe(4);
 	});
 
@@ -49,14 +50,14 @@ describe("index barrel exports", () => {
 });
 
 describe("type contracts (compile-time verification)", () => {
-	it("ActivityStatus accepts valid values", () => {
-		const statuses: ActivityStatus[] = [
-			"processing",
-			"running_tool",
+	it("ACTIVITY_STATUSES is the source of truth for ActivityStatus", () => {
+		const statuses: ActivityStatus[] = [...ACTIVITY_STATUSES];
+		expect([...statuses].sort()).toEqual([
 			"idle",
 			"pending_approval",
-		];
-		expect(statuses).toHaveLength(4);
+			"processing",
+			"running_tool",
+		]);
 	});
 
 	it("RegisterBody satisfies required fields", () => {

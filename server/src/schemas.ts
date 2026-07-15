@@ -1,11 +1,7 @@
 import { z } from "zod";
+import { ACTIVITY_STATUSES } from "@pi-fleet/shared";
 
-const activitySchema = z.enum([
-	"processing",
-	"running_tool",
-	"idle",
-	"pending_approval",
-]);
+const activitySchema = z.enum(ACTIVITY_STATUSES);
 
 const contextUsageSchema = z.object({
 	tokens: z.number().nullable(),

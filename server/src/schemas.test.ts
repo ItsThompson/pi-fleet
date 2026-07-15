@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { registerBodySchema, heartbeatBodySchema } from "./schemas.js";
+import { ACTIVITY_STATUSES } from "@pi-fleet/shared";
 
 describe("registerBodySchema", () => {
 	const validPayload = {
@@ -155,13 +156,12 @@ describe("heartbeatBodySchema", () => {
 	});
 
 	it("accepts all valid activity statuses", () => {
-		const statuses = ["processing", "running_tool", "idle", "pending_approval"];
-		statuses.forEach((activity) => {
+		for (const activity of ACTIVITY_STATUSES) {
 			const result = heartbeatBodySchema.safeParse({
 				...validPayload,
 				activity,
 			});
 			expect(result.success).toBe(true);
-		});
+		}
 	});
 });

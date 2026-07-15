@@ -18,8 +18,8 @@ export interface Pod {
  * Higher number = "worse" state shown on pod.
  */
 export const STATE_PRIORITY: Record<ActivityStatus, number> = {
-	processing: 1,
+	idle: 1,
 	running_tool: 2,
-	idle: 3,
+	processing: 3,
 	pending_approval: 4,
 };
