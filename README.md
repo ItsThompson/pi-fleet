@@ -1,5 +1,11 @@
 # Pi Fleet
 
+<p>
+  <a href="https://0rwx.com/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://0rwx.com/static/AI-X-dark.svg"><img src="https://0rwx.com/static/AI-X-light.svg" alt="0rwx EXECUTE: Human architected, AI executed" width="64" height="64"></picture></a>
+  <br>
+  <sub><strong>0rwx EXECUTE</strong>: Human architected, AI executed</sub>
+</p>
+
 A macOS menu-bar dashboard for observing, grouping, and navigating pi coding agent sessions. Pi Fleet shows all active sessions on your machine, organizes them hierarchically, surfaces which sessions need your attention, and lets you jump to any session's terminal pane with one click.
 
 Pi Fleet is **observation-only**: all agent interaction stays in the terminal.
